@@ -334,6 +334,7 @@ function renderExCard(ex, key, dayColor, done, isFinisher=false) {
   const tc = tag && tagMap[tag];
   const rowCls = tag==='PLYO'?'plyo':tag==='ABS'?'abs':'';
 
+  const checkHandler = key.startsWith('f-') ? `toggleFinisher('${key}')` : `toggleCheck('${key}')`;
   let checkStyle = done
     ? `border-color:${dayColor};background:${dayColor};color:#000`
     : `border-color:#444`;
@@ -395,7 +396,7 @@ function renderExCard(ex, key, dayColor, done, isFinisher=false) {
     <div class="ex-card ${rowCls}${done?' done':''}${isEditing?' editing':''}" style="--ac:${dayColor};border-color:${isEditing?dayColor:''}">
       <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${tag==='PLYO'?'#ff6b6b':tag==='ABS'?'#47ff99':dayColor};opacity:${tag?0.6:0.35}"></div>
       <div class="ex-row">
-        <div class="check-circle" style="${checkStyle}" onclick="toggleCheck('${key}')">${done?'✓':''}</div>
+        <div class="check-circle" style="${checkStyle}" onclick="${checkHandler}">${done?'✓':''}</div>
         <div style="flex:1;min-width:0">${content}</div>
       </div>
     </div>`;
@@ -783,6 +784,21 @@ function toggleCheck(key) {
   wd.completed[key] = !wasChecked;
   if (!wasChecked) wd.completedDates[key] = new Date().toISOString();
   else delete wd.completedDates[key];
+  saveStorage();
+  renderWorkout();
+}
+
+function toggleFinisher(key) {
+  if (state.editingKey) return;
+  const wk = getWeekKey(state.weekOffset);
+  ensureWeek(wk);
+  const wd = state.allWeeks[wk];
+  if (!wd.finisherDone) wd.finisherDone = {};
+  if (!wd.finisherDates) wd.finisherDates = {};
+  const wasChecked = !!wd.finisherDone[key];
+  wd.finisherDone[key] = !wasChecked;
+  if (!wasChecked) wd.finisherDates[key] = new Date().toISOString();
+  else delete wd.finisherDates[key];
   saveStorage();
   renderWorkout();
 }
