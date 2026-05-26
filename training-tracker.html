@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Training Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d0d;color:#f0f0f0;font-family:'DM Mono',monospace;min-height:100vh;padding-bottom:60px}
+.nav{background:#0d0d0d;border-bottom:1px solid #1a1a1a;position:sticky;top:0;z-index:100;padding:10px 14px 0}
+.nav-inner{max-width:640px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end}
+.nav-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.06em;color:#fff}
+.nav-tabs{display:flex;gap:2px}
+.nav-btn{background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:6px 7px;border-radius:6px;color:#444;transition:all .15s}
+.nav-btn.active{background:#1e1e1e;color:#f0f0f0}
+.page{max-width:640px;margin:0 auto;padding:16px 14px 40px;display:none}
+.page.active{display:block}
+.bebas{font-family:'Bebas Neue',sans-serif;letter-spacing:.06em}
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.week-btn{background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:11px;padding:5px 12px;cursor:pointer;font-family:'DM Mono',monospace}
+.pb-track{height:4px;background:#1e1e1e;border-radius:2px;overflow:hidden;margin-bottom:14px}
+.pb-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.day-tabs{display:flex;border-bottom:1px solid #1e1e1e;margin-bottom:16px}
+.day-tab{flex:1;padding:8px 4px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+.day-tab .dt-label{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.06em}
+.day-tab .dt-type{font-size:7px;letter-spacing:.08em;text-transform:uppercase;padding:2px 3px;border-radius:3px;margin-top:3px;font-weight:500}
+.day-tab .dt-dot{width:5px;height:5px;border-radius:50%;margin:3px auto 0}
+.sec-div{font-size:9px;color:#3a3a3a;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 7px;padding-left:8px;border-left:2px solid #2a2a2a}
+.ex-card{background:#161616;border:1px solid #222;border-radius:10px;padding:12px 14px;margin-bottom:9px;position:relative;overflow:hidden;transition:all .2s}
+.ex-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;opacity:.35}
+.ex-card.plyo{background:#1a1212;border-color:#2e1e1e}
+.ex-card.plyo::before{background:#ff6b6b;opacity:.6}
+.ex-card.abs{background:#121a14;border-color:#1e2e20}
+.ex-card.abs::before{background:#47ff99;opacity:.5}
+.ex-card.done{opacity:.35;background:#111}
+.ex-card.done::before{opacity:1}
+.ex-card.editing{background:#1a1a1a!important}
+.ex-row{display:flex;align-items:flex-start;gap:10px}
+.check-circle{width:22px;height:22px;border-radius:50%;border:2px solid #444;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all .2s;user-select:none}
+.ex-name{font-size:13px;font-weight:500;color:#e8e8e8;margin-bottom:5px}
+.ex-name.done-text{color:#555}
+.ex-meta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.pill-accent{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.pill-dark{font-size:10px;color:#888;background:#1e1e1e;padding:2px 7px;border-radius:4px;border:1px solid #2a2a2a}
+.ex-note{font-size:11px;color:#666;line-height:1.5}
+.tag-pill{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;letter-spacing:.1em;margin-left:5px}
+.edit-btn{background:none;border:1px solid #2a2a2a;border-radius:5px;color:#444;font-size:10px;padding:2px 7px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;flex-shrink:0}
+.edit-form{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.edit-row{display:flex;gap:7px;flex-wrap:wrap}
+.edit-field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:65px}
+.edit-label{font-size:9px;color:#555;letter-spacing:.1em;text-transform:uppercase}
+.edit-input{background:#0d0d0d;border:1px solid #555;border-radius:5px;color:#f0f0f0;font-size:11px;font-family:'DM Mono',monospace;padding:4px 7px;width:100%;outline:none}
+.set-weights{display:flex;flex-wrap:wrap;gap:5px}
+.save-btn{background:#888;border:none;border-radius:5px;color:#000;font-size:10px;padding:4px 10px;cursor:pointer;font-family:'DM Mono',monospace;font-weight:600}
+.cancel-btn{background:none;border:1px solid #333;border-radius:5px;color:#555;font-size:10px;padding:4px 10px;cursor:pointer;font-family:'DM Mono',monospace}
+.complete-banner{margin-top:18px;padding:14px 18px;border-radius:10px;text-align:center}
+.finisher-section{margin-top:24px}
+.finisher-card{background:#111;border-radius:10px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden;transition:all .2s}
+.cable-section{margin-top:24px}
+.cable-card{background:#0f0f0f;border:1px solid #1e1e1e;border-radius:10px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden}
+.prog-banner{margin-top:8px;padding:8px 12px;border-radius:7px;font-size:10px;line-height:1.5}
+/* Mobility */
+.mob-block{margin-bottom:10px}
+.mob-header{background:#141414;border-radius:10px;padding:12px 14px;cursor:pointer;position:relative;overflow:hidden;transition:border-radius .2s}
+.mob-header.open{border-radius:10px 10px 0 0}
+.mob-body{border-top:none;border-radius:0 0 10px 10px;background:#0f0f0f;padding:4px 12px 10px;display:none}
+.mob-body.open{display:block}
+.mob-ex{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;cursor:pointer}
+/* History */
+.hist-card{background:#141414;border:1px solid #222;border-radius:10px;padding:13px 14px;margin-bottom:10px}
+.hist-day-grid{display:flex;gap:5px;margin-top:8px}
+.hist-day-tile{flex:1;border-radius:6px;padding:6px 3px;text-align:center;cursor:pointer;transition:all .15s;border:1px solid #222}
+.hist-drill{background:#0f0f0f;border-radius:8px;padding:9px 11px;margin-top:5px;display:none}
+.hist-drill.open{display:block}
+.hist-ex-row{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 0;border-bottom:1px solid #1a1a1a;font-size:11px}
+.hist-ex-row:last-child{border-bottom:none}
+/* Progress */
+.prog-entry{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.prog-bar-wrap{flex:1;background:#161616;border:1px solid #1e1e1e;border-radius:8px;padding:9px 13px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:24px}
+.stat-card{background:#141414;border:1px solid #1e1e1e;border-radius:10px;padding:13px 14px}
+/* Recommendation badge */
+.rec-badge{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:600;letter-spacing:.07em;margin-left:6px;display:inline-block}
+select.sel-input{background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#ccc;font-size:11px;font-family:'DM Mono',monospace;padding:6px 10px;outline:none;width:100%;cursor:pointer;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-inner">
+    <div class="nav-title">TRAINING TRACKER</div>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="showPage('workout')">🏋️ workout</button>
+      <button class="nav-btn" onclick="showPage('mobility')">🧘 mobility</button>
+      <button class="nav-btn" onclick="showPage('history')">📅 history</button>
+      <button class="nav-btn" onclick="showPage('progress')">📈 progress</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-workout" class="page active"></div>
+<div id="page-mobility" class="page"></div>
+<div id="page-history" class="page"></div>
+<div id="page-progress" class="page"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const PROGRAM = [
+  { id:1, label:"MON", type:"UPPER", focus:"Full Upper", tag:"Chest · Back · Shoulders · Arms", color:"#E8FF47", textColor:"#0a0a0a",
+    exercises:[
+      {name:"Box Jumps",sets:"3",reps:"5",load:"Bodyweight",note:"⚡ Reset between reps — land soft, absorb fully",exTag:"PLYO"},
+      {name:"DB Chest Press",sets:"4",reps:"8",load:"40 lb each",note:"Independent setup — knee-kick drill, press hard"},
+      {name:"Seated Cable Row",sets:"4",reps:"10",load:"40 lb",note:"Chest tall, drive elbows back, squeeze at end",setWeights:["40 lb","40 lb","50 lb","50 lb"]},
+      {name:"Lat Pulldown",sets:"3",reps:"8",load:"70 lb",note:"3-sec eccentric — own the stretch"},
+      {name:"Seated DB Shoulder Press",sets:"3",reps:"6",load:"30 lb each",note:"After pulling — shoulders warm, push toward 3×8"},
+      {name:"Hammer Curls",sets:"3",reps:"8",load:"20 lb each",note:"Slow and deliberate — squeeze at top"},
+      {name:"Hollow Body Hold",sets:"3",reps:"25",load:"Bodyweight",note:"🔥 Lower back flat, legs low, steady breath",exTag:"ABS"},
+    ]},
+  { id:2, label:"TUE", type:"LOWER", focus:"Posterior Chain", tag:"Glutes · Hamstrings · Hinge", color:"#FF6B6B", textColor:"#fff",
+    exercises:[
+      {name:"Lateral Skater Hops",sets:"3",reps:"8",load:"Bodyweight",note:"⚡ Push hard laterally, stick every landing",exTag:"PLYO"},
+      {name:"Hip Thrust",sets:"4",reps:"10",load:"90 lb",note:"2-sec pause at top on final set — full glute squeeze"},
+      {name:"Romanian Deadlift",sets:"4",reps:"10",load:"35 lb each",note:"Slow descent — feel the hamstring load, don't round"},
+      {name:"Cable Glute Kickback",sets:"3",reps:"12",load:"15 lb",note:"Ankle cuff — squeeze at full extension, no swinging"},
+      {name:"Hamstring Curl Machine",sets:"3",reps:"8",load:"80 lb",note:"3-sec eccentric — hamstrings pre-fatigued, own the control"},
+      {name:"Dead Bug",sets:"3",reps:"8",load:"Bodyweight",note:"🔥 Opposite arm/leg, lower back stays flat",exTag:"ABS"},
+    ]},
+  { id:3, label:"WED", type:"PUSH", focus:"Push", tag:"Chest · Shoulders · Triceps", color:"#47C4FF", textColor:"#0a0a0a",
+    exercises:[
+      {name:"Plyo Push-Up",sets:"3",reps:"5",load:"Bodyweight",note:"⚡ Explode off floor, catch soft — max intent every rep",exTag:"PLYO"},
+      {name:"Incline DB Press",sets:"4",reps:"8",load:"40 lb each",note:"Primary chest mover — earn the 45s, own the top"},
+      {name:"Arnold Press",sets:"3",reps:"10",load:"20 lb each",note:"Full rotation — all three delt heads, control the eccentric"},
+      {name:"DB Lateral Raise",sets:"3",reps:"12",load:"10 lb each",note:"Lead with elbow, slight forward lean, no shrugging"},
+      {name:"Cable Tricep Pushdown",sets:"3",reps:"12",load:"25 lb",note:"Elbow pinned at side — squeeze hard at lockout"},
+      {name:"Weighted Sit-Up",sets:"3",reps:"12",load:"10 lb plate",note:"🔥 Controlled — plate to chest, no yanking the neck",exTag:"ABS"},
+    ]},
+  { id:4, label:"THU", type:"PULL", focus:"Pull", tag:"Back · Biceps · Rear Delts · Grip", color:"#B847FF", textColor:"#fff",
+    exercises:[
+      {name:"Pull-Up Negatives",sets:"3",reps:"4",load:"Bodyweight",note:"⚡ Jump to top, 4-sec controlled lower — builds your pull-up",exTag:"PLYO"},
+      {name:"Lat Pulldown",sets:"4",reps:"8",load:"70 lb",note:"Load increase attempt — 3-sec eccentric, full stretch at top"},
+      {name:"Single-Arm DB Row",sets:"4",reps:"10",load:"40 lb each",note:"Push toward 45s — brace hard, row to hip not armpit"},
+      {name:"Incline DB Curl",sets:"3",reps:"10",load:"15 lb each",note:"Full stretch at bottom — no swinging, pure bicep"},
+      {name:"Dead Hang",sets:"3",reps:"35",load:"Bodyweight",note:"Grip — track time each set, active shoulders not passive",exTag:"GRIP"},
+      {name:"Hanging Knee Raise",sets:"3",reps:"10",load:"Bodyweight",note:"🔥 From pull-up bar — tuck hard, lower slow, no swinging",exTag:"ABS"},
+    ]},
+  { id:5, label:"FRI", type:"LOWER", focus:"Quad + Power", tag:"Quads · Glutes · Athletic · Core", color:"#FF9F47", textColor:"#0a0a0a",
+    exercises:[
+      {name:"Broad Jump",sets:"3",reps:"5",load:"Bodyweight",note:"⚡ Max distance — full arm swing, explode, stick landing",exTag:"PLYO"},
+      {name:"Front Squat",sets:"4",reps:"8",load:"35 lb each",note:"Upright torso — elbows high, position is everything"},
+      {name:"Bulgarian Split Squat",sets:"3",reps:"8",load:"25 lb each",note:"Rear foot elevated — torso tall, knee tracks over toe"},
+      {name:"Cable Hip Abduction",sets:"3",reps:"12",load:"10 lb",note:"Ankle cuff, stand side-on — feel glute med, no leaning"},
+      {name:"Leg Extension Machine",sets:"3",reps:"10",load:"50 lb",note:"Quad isolation — full extension, 2-sec hold at top"},
+      {name:"Cable Woodchop",sets:"3",reps:"10",load:"15 lb",note:"🔥 Rotate from hips not arms — athletic rotational power",exTag:"ABS"},
+    ]},
+];
+
+const FINISHERS = [
+  {exercises:[
+    {name:"DB Chest Fly (Flat)",sets:"3",reps:"12",load:"15 lb each",note:"Full stretch at bottom — pure pec stretch under load."},
+    {name:"Zottman Curl",sets:"3",reps:"10",load:"12 lb each",note:"Curl up supinated, rotate pronated on way down. Both bicep heads."},
+    {name:"DB Rear Delt Fly",sets:"3",reps:"15",load:"10 lb each",note:"Hinge forward 45°, arms wide, lead with elbows."},
+  ]},
+  {exercises:[
+    {name:"Glute Bridge Hold",sets:"3",reps:"45",load:"Bodyweight",note:"Squeeze hard at top and hold — serious glute endurance."},
+    {name:"Copenhagen Plank",sets:"3",reps:"25",load:"Bodyweight",note:"Side plank, top foot on bench. Brutal adductor + hip stability."},
+    {name:"Single-Leg Glute Bridge",sets:"3",reps:"12",load:"Bodyweight",note:"One leg extended, drive through heel. Exposes side imbalances."},
+  ]},
+  {exercises:[
+    {name:"DB Skull Crusher",sets:"3",reps:"12",load:"12 lb each",note:"Lower DBs toward temples. Hits long head of tricep."},
+    {name:"Pike Push-Up",sets:"3",reps:"8",load:"Bodyweight",note:"Hips high, lower head to floor. Bridge to overhead pressing strength."},
+    {name:"DB Front Raise",sets:"3",reps:"12",load:"10 lb each",note:"Alternate arms, slow and controlled. Anterior delt volume."},
+  ]},
+  {exercises:[
+    {name:"Face Pull",sets:"3",reps:"20",load:"15 lb",note:"High anchor, pull to forehead, elbows wide. Highest ROI shoulder exercise."},
+    {name:"DB Shrug",sets:"3",reps:"15",load:"35 lb each",note:"Slow up, 2-sec hold at top, slow down. Upper trap for rows + pull-up lockout."},
+    {name:"Inverted Row",sets:"3",reps:"10",load:"Bodyweight",note:"Heels on floor, pull chest to bench edge. Harder than it looks."},
+  ]},
+  {exercises:[
+    {name:"Wall Sit with DB",sets:"3",reps:"45",load:"20 lb each",note:"DBs on thighs. Mental toughness finisher after hard quad day."},
+    {name:"Lateral Half-Squat Steps",sets:"3",reps:"15",load:"Bodyweight",note:"Slow lateral steps in half-squat. Glute med activation."},
+    {name:"Reverse Lunge to Knee Drive",sets:"3",reps:"10",load:"15 lb each",note:"Step back into lunge, drive knee up on return. Athletic power pattern."},
+  ]},
+];
+
+const CABLE_FREE_BY_DAY = {
+  MON:[{original:"Seated Cable Row",alt:"DB Bent-Over Row (Both Arms)",sets:"4",reps:"10",load:"30 lb each",note:"Hinge at hip, spine neutral, row both DBs to lower ribs. Keep back flat."}],
+  TUE:[{original:"Cable Glute Kickback",alt:"Donkey Kick (DB in knee crook)",sets:"3",reps:"12",load:"Light DB",note:"On all fours, DB behind knee, kick back and up. Squeeze hard at top."}],
+  WED:[{original:"Cable Tricep Pushdown",alt:"DB Overhead Tricep Extension",sets:"3",reps:"12",load:"20 lb single DB",note:"Hold one DB with both hands overhead, lower behind head, extend up."}],
+  THU:[],
+  FRI:[
+    {original:"Cable Hip Abduction",alt:"Side-Lying DB Hip Abduction",sets:"3",reps:"15",load:"Light DB on outer thigh",note:"Lie on side, DB on outer thigh, lift against load. Slow and controlled."},
+    {original:"Cable Woodchop",alt:"DB Rotational Slam",sets:"3",reps:"10",load:"10 lb DB",note:"DB at shoulder height, rotate explosively to opposite hip. Control the return."},
+  ],
+};
+
+const MOBILITY = [
+  {id:"hips",label:"Hip Flexors & Hip Mobility",color:"#FF9F47",why:"Unlocks front squat depth, RDL range, reduces knee stress",equipment:"Bench, Bodyweight",duration:"5–6 min",exercises:[
+    {name:"90/90 Hip Switch",duration:"60 sec",note:"Sit on floor, both knees at 90°. Rotate side to side slowly. Keep torso tall."},
+    {name:"Couch Stretch",duration:"45 sec each side",note:"Rear knee on floor, front foot forward. Drive hips forward into hip flexor stretch."},
+    {name:"Deep Squat Hold",duration:"60 sec",note:"Feet shoulder-width, toes out. Hold DB at chest for counterbalance. Breathe into the bottom."},
+    {name:"Banded Hip Circle",duration:"30 sec each side",note:"Band around thighs, half-squat. Circle one knee out and around slowly."},
+  ]},
+  {id:"thoracic",label:"Thoracic Spine & Shoulder",color:"#47C4FF",why:"Unlocks overhead pressing, pull-up depth, front squat posture",equipment:"Bench, DB (light)",duration:"5–6 min",exercises:[
+    {name:"Bench T-Spine Extension",duration:"60 sec",note:"Upper back on bench edge, hands behind head, chest opens to ceiling."},
+    {name:"Thread the Needle",duration:"45 sec each side",note:"On all fours, thread one arm under body and rotate. Opens thoracic rotation."},
+    {name:"Wall Shoulder Slides",duration:"10 reps",note:"Back flat against wall, slide arms overhead keeping contact. Trains overhead mobility."},
+    {name:"DB Chest Opener",duration:"60 sec",note:"Lie on bench, light DB overhead with both hands. Let gravity open chest and shoulders."},
+  ]},
+  {id:"ankle",label:"Ankle Dorsiflexion",color:"#E8FF47",why:"Affects squat depth, landing mechanics, knee tracking",equipment:"Bodyweight, Wall",duration:"4–5 min",exercises:[
+    {name:"Wall Ankle Drill",duration:"10 reps each side",note:"Foot 3-4 inches from wall. Drive knee to wall without heel lifting. Track your distance."},
+    {name:"Elevated Heel Squat Hold",duration:"60 sec",note:"Heels on 10 lb plate, squat to bottom. Hold and breathe."},
+    {name:"Calf Stretch on Step",duration:"45 sec each side",note:"Drop heel below step edge. Straight leg = gastroc, bent = soleus. Do both."},
+  ]},
+  {id:"posterior",label:"Posterior Chain Flexibility",color:"#FF6B6B",why:"Increases RDL range, hamstring curl strength, protects lower back",equipment:"Bench, DB (light)",duration:"4–5 min",exercises:[
+    {name:"Standing Hamstring Sweep",duration:"10 reps each side",note:"Hold DB for counterbalance. Hinge at hip, reach toward floor. Mobility RDL."},
+    {name:"Single-Leg Bench Hamstring Stretch",duration:"45 sec each side",note:"Heel on bench, hinge forward slowly. Keep spine neutral."},
+    {name:"Hip Hinge with Reach",duration:"10 reps",note:"DB along spine. Hinge keeping head, upper back, tailbone in contact."},
+    {name:"Supine Glute Stretch (Figure 4)",duration:"45 sec each side",note:"Lie on back, ankle over opposite knee, pull toward chest."},
+  ]},
+  {id:"shoulder",label:"Shoulder Rotation & Scapular Control",color:"#B847FF",why:"Builds pull-up strength, protects shoulder, improves pulldown mechanics",equipment:"DB (5–8 lb), Cable",duration:"4–5 min",exercises:[
+    {name:"Side-Lying External Rotation",duration:"12 reps each side",note:"Lie on side, elbow at 90°, light DB. Rotate forearm up. Keep it light."},
+    {name:"Cable Face Pull (Light)",duration:"15 reps",note:"Cable at face height, pull toward face, elbows flared wide and high."},
+    {name:"Scapular Pull-Up",duration:"10 reps",note:"Hang from bar, arms straight. Squeeze shoulder blades down without bending elbows."},
+    {name:"Pec Stretch",duration:"45 sec each side",note:"Cable or doorframe at shoulder height. Arm against surface, rotate away."},
+  ]},
+];
+
+const FINISHER_IDX = {MON:0,TUE:1,WED:2,THU:3,FRI:4};
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let state = {
+  view: 'workout',
+  activeDay: 0,
+  weekOffset: 0,
+  editingKey: null,
+  editValues: {},
+  mobOpen: {},
+  mobChecked: {},
+  histOpen: {},
+  selectedEx: PROGRAM[0].exercises[0].name,
+  allWeeks: {},
+};
+
+function loadStorage() {
+  try {
+    const saved = localStorage.getItem('training-tracker-v2');
+    if (saved) state.allWeeks = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveStorage() {
+  try { localStorage.setItem('training-tracker-v2', JSON.stringify(state.allWeeks)); } catch(e) {}
+}
+
+function getWeekKey(offset=0) {
+  const now = new Date();
+  const dow = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - ((dow+6)%7) + offset*7);
+  return mon.toISOString().split('T')[0];
+}
+
+function getWeekLabel(wk) {
+  const d = new Date(wk);
+  const e = new Date(d); e.setDate(d.getDate()+4);
+  const f = x => x.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return `${f(d)} – ${f(e)}`;
+}
+
+function getWeekData(wk) {
+  if (state.allWeeks[wk]) return state.allWeeks[wk];
+  return {
+    days: PROGRAM.map(d => ({...d, exercises: d.exercises.map(ex => ({...ex}))})),
+    completed: {}, completedDates: {},
+    finishers: FINISHERS.map(f => ({exercises: f.exercises.map(ex => ({...ex}))})),
+    finisherDone: {}, finisherDates: {},
+  };
+}
+
+function ensureWeek(wk) {
+  if (!state.allWeeks[wk]) state.allWeeks[wk] = getWeekData(wk);
+}
+
+// ─────────────────────────────────────────────
+// PROGRESSION LOGIC
+// ─────────────────────────────────────────────
+function getProgression(exName) {
+  // Collect last 3 weeks of data for this exercise
+  const weeks = Object.keys(state.allWeeks).sort();
+  const entries = [];
+  for (const wk of weeks) {
+    const wd = state.allWeeks[wk];
+    for (let di=0; di<wd.days.length; di++) {
+      const ex = wd.days[di].exercises.find(e => e.name === exName);
+      if (!ex) continue;
+      const anyDone = wd.days[di].exercises.some((_,ei) => wd.completed[`${di}-${ei}`]);
+      if (anyDone) entries.push({wk, ex});
+    }
+  }
+  if (entries.length < 2) return null;
+  const last = entries[entries.length-1];
+  const prev = entries[entries.length-2];
+  const lastReps = parseInt(last.ex.reps) || 0;
+  const prevReps = parseInt(prev.ex.reps) || 0;
+  const lastSets = parseInt(last.ex.sets) || 0;
+  const isBodyweight = (last.ex.load||'').toLowerCase().includes('bodyweight');
+  // Recommendation rules
+  if (isBodyweight) {
+    if (lastReps >= parseInt(last.ex.reps)*1.2) return {type:'increase',msg:'Consider adding reps or a weighted variation'};
+    return null;
+  }
+  if (lastReps >= 10 && prevReps >= 10) return {type:'weight',msg:'Hit target reps 2 weeks — time to increase weight 5–10%'};
+  if (lastReps > prevReps && lastReps >= parseInt(last.ex.reps)) return {type:'reps',msg:'Rep target hit — push for one more rep next session'};
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// RENDER HELPERS
+// ─────────────────────────────────────────────
+function isBodyweightEx(load) {
+  return (load||'').toLowerCase().includes('bodyweight');
+}
+
+function renderExCard(ex, key, dayColor, done, isFinisher=false) {
+  const isEditing = state.editingKey === key;
+  const isBW = isBodyweightEx(ex.load);
+  const tag = ex.exTag;
+  const tagMap = {PLYO:{bg:'#ff6b6b22',color:'#ff6b6b'},ABS:{bg:'#47ff9922',color:'#47ff99'},GRIP:{bg:'#ffb84722',color:'#ffb847'}};
+  const tc = tag && tagMap[tag];
+  const rowCls = tag==='PLYO'?'plyo':tag==='ABS'?'abs':'';
+
+  let checkStyle = done
+    ? `border-color:${dayColor};background:${dayColor};color:#000`
+    : `border-color:#444`;
+
+  let content = '';
+  if (isEditing) {
+    const sw = state.editValues.setWeights || [];
+    const setInputs = sw.map((w,si) => `
+      <div class="edit-field" style="max-width:120px">
+        <div class="edit-label">Set ${si+1}</div>
+        <input class="edit-input" style="border-color:${dayColor}" value="${w}" placeholder="e.g. 40 lb"
+          onchange="updateSetWeight('${key}',${si},this.value)">
+      </div>`).join('');
+    content = `
+      <div class="edit-form">
+        <div class="edit-row">
+          <div class="edit-field" style="max-width:70px">
+            <div class="edit-label">Sets</div>
+            <input class="edit-input" style="border-color:${dayColor}" type="number" min="1" max="10" value="${state.editValues.sets}"
+              oninput="updateEditSets('${key}',this.value)">
+          </div>
+          <div class="edit-field" style="max-width:100px">
+            <div class="edit-label">Reps</div>
+            <input class="edit-input" style="border-color:${dayColor}" value="${state.editValues.reps}"
+              onchange="updateEditField('reps',this.value)">
+          </div>
+        </div>
+        ${!isBW ? `<div>
+          <div class="edit-label" style="margin-bottom:5px">Weight per set ${sw.length>1?'<span style="color:#3a3a3a">(independently)</span>':''}</div>
+          <div class="set-weights">${setInputs}</div>
+        </div>` : ''}
+        <div style="display:flex;gap:7px">
+          <button class="save-btn" style="background:${dayColor}" onclick="saveEdit('${key}')">SAVE</button>
+          <button class="cancel-btn" onclick="cancelEdit()">CANCEL</button>
+        </div>
+      </div>`;
+  } else {
+    const prog = !isFinisher ? getProgression(ex.name) : null;
+    const progBadge = prog ? `<span class="rec-badge" style="background:${prog.type==='weight'?'#E8FF4733':'#47ff9933'};color:${prog.type==='weight'?'#E8FF47':'#47ff99'};border:1px solid ${prog.type==='weight'?'#E8FF4755':'#47ff9955'}">
+      ${prog.type==='weight'?'↑ INCREASE WEIGHT':'↑ ADD REPS'}</span>` : '';
+    content = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0">
+          <span class="ex-name${done?' done-text':''}">${ex.name}</span>
+          ${tc?`<span class="tag-pill" style="background:${tc.bg};color:${tc.color}">${tag}</span>`:''}
+          ${progBadge}
+        </div>
+        <button class="edit-btn" style="--ac:${dayColor}" onclick="startEdit(event,'${key}')">EDIT</button>
+      </div>
+      <div class="ex-meta">
+        <span class="pill-accent" style="color:${dayColor};background:${dayColor}18">${ex.sets}×${ex.reps}</span>
+        ${!isBW?`<span class="pill-dark">${ex.load}</span>`:''}
+      </div>
+      <div class="ex-note" style="color:${done?'#333':'#666'}">${ex.note||''}</div>
+      ${prog?`<div class="prog-banner" style="background:${prog.type==='weight'?'#E8FF4710':'#47ff9910'};color:${prog.type==='weight'?'#E8FF47':'#47ff99'};border:1px solid ${prog.type==='weight'?'#E8FF4730':'#47ff9930'};margin-top:6px">${prog.msg}</div>`:''}`;
+  }
+
+  return `
+    <div class="ex-card ${rowCls}${done?' done':''}${isEditing?' editing':''}" style="--ac:${dayColor};border-color:${isEditing?dayColor:''}">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${tag==='PLYO'?'#ff6b6b':tag==='ABS'?'#47ff99':dayColor};opacity:${tag?0.6:0.35}"></div>
+      <div class="ex-row">
+        <div class="check-circle" style="${checkStyle}" onclick="toggleCheck('${key}')">${done?'✓':''}</div>
+        <div style="flex:1;min-width:0">${content}</div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// WORKOUT PAGE
+// ─────────────────────────────────────────────
+function renderWorkout() {
+  const wk = getWeekKey(state.weekOffset);
+  const wd = getWeekData(wk);
+  const day = wd.days[state.activeDay];
+  const dayIdx = state.activeDay;
+  const checked = wd.completed;
+
+  // Stats
+  const totalEx = day.exercises.length;
+  const doneEx = day.exercises.filter((_,i) => checked[`${dayIdx}-${i}`]).length;
+  const weekDone = wd.days.filter((d,di) => d.exercises.every((_,ei) => checked[`${di}-${ei}`])).length;
+
+  // Week nav
+  let html = `<div class="week-nav">
+    <button class="week-btn" onclick="changeWeek(-1)">← prev</button>
+    <div style="text-align:center">
+      <div class="bebas" style="font-size:14px;color:${state.weekOffset===0?'#E8FF47':'#ccc'}">${state.weekOffset===0?'THIS WEEK':getWeekLabel(wk).toUpperCase()}</div>
+    </div>
+    <button class="week-btn" onclick="changeWeek(1)" style="opacity:${state.weekOffset===0?0.2:1};cursor:${state.weekOffset===0?'default':'pointer'}">next →</button>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:9px;color:#3a3a3a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em">
+    <span>week progress</span><span>${weekDone}/5 sessions</span>
+  </div>
+  <div class="pb-track"><div class="pb-fill" style="width:${(weekDone/5)*100}%;background:#E8FF47"></div></div>`;
+
+  // Day tabs
+  html += `<div class="day-tabs">`;
+  wd.days.forEach((d,i) => {
+    const isDone = d.exercises.every((_,ei) => checked[`${i}-${ei}`]);
+    const isActive = i===state.activeDay;
+    html += `<div class="day-tab" style="border-bottom-color:${isActive?d.color:'transparent'};color:${isActive?d.color:'#555'}" onclick="setDay(${i})">
+      <div class="dt-label">${d.label}</div>
+      <div class="dt-type" style="background:${isActive?d.color:'transparent'};color:${isActive?d.textColor:'#555'}">${d.type}</div>
+      ${isDone?`<div class="dt-dot" style="background:${d.color}"></div>`:''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Day header
+  html += `<div style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px;flex-wrap:wrap">
+      <div class="bebas" style="font-size:22px;color:${day.color}">${day.focus}</div>
+      <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${day.color}22;color:${day.color};border:1px solid ${day.color}44;letter-spacing:.08em">${day.type}</span>
+      <span style="font-size:11px;color:#444;margin-left:auto">${doneEx}/${totalEx} done</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:#1e1e1e;border:1px solid #2a2a2a;font-size:11px;color:#888">
+      <div style="width:6px;height:6px;border-radius:50%;background:${day.color}"></div>${day.tag}
+    </div>
+  </div>
+  <div style="font-size:10px;color:#2a2a2a;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px">Tap ✓ to log · EDIT to adjust weight or reps</div>`;
+
+  // Exercises by section
+  const sections = [
+    {label:'Power', filter: ex => ex.exTag==='PLYO'},
+    {label:'Strength', filter: ex => !ex.exTag || ex.exTag==='GRIP'},
+    {label:'Core', filter: ex => ex.exTag==='ABS'},
+  ];
+  sections.forEach(sec => {
+    const exs = day.exercises.map((ex,i)=>({ex,i})).filter(({ex})=>sec.filter(ex));
+    if (!exs.length) return;
+    html += `<div class="sec-div">${sec.label}</div>`;
+    exs.forEach(({ex,i}) => {
+      const key = `${dayIdx}-${i}`;
+      const done = !!checked[key];
+      html += renderExCard(ex, key, day.color, done);
+    });
+  });
+
+  // Completion banners
+  if (doneEx === totalEx) {
+    html += `<div class="complete-banner" style="background:${day.color}12;border:1px solid ${day.color}33">
+      <div class="bebas" style="font-size:20px;color:${day.color}">SESSION COMPLETE</div>
+      <div style="font-size:11px;color:#555;margin-top:3px">REST · RECOVER · COME BACK STRONGER</div>
+    </div>`;
+  }
+  if (weekDone===5) {
+    html += `<div class="complete-banner" style="background:#1a1a0a;border:1px solid #E8FF4733;margin-top:10px">
+      <div class="bebas" style="font-size:18px;color:#E8FF47">🏆 FULL WEEK COMPLETE</div>
+    </div>`;
+  }
+
+  // Finishers
+  const finIdx = FINISHER_IDX[day.label];
+  const finData = (wd.finishers||FINISHERS.map(f=>({exercises:f.exercises.map(ex=>({...ex}))})))[finIdx];
+  if (finData) {
+    html += `<div class="finisher-section">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <div class="bebas" style="font-size:17px;color:${day.color}">IF YOU HAVE TIME</div>
+        <span style="font-size:9px;color:#555;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;padding:2px 8px">+5–8 MIN</span>
+      </div>
+      <div style="font-size:10px;color:#3a3a3a;margin-bottom:10px;letter-spacing:.06em">OPTIONAL FINISHERS — tap ✓ to log · EDIT to adjust</div>`;
+    finData.exercises.forEach((ex,fi) => {
+      const key = `f-${finIdx}-${fi}`;
+      const done = !!(wd.finisherDone||{})[key];
+      html += `<div class="finisher-card" style="border:1px solid ${state.editingKey===key?day.color:done?day.color+'44':day.color+'22'};opacity:${done?0.5:1}">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${day.color};opacity:${done?1:0.5}"></div>
+        ${renderExCard(ex, key, day.color, done, true)}
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Cable-free
+  const cableFree = CABLE_FREE_BY_DAY[day.label]||[];
+  if (cableFree.length) {
+    html += `<div class="cable-section">
+      <div class="bebas" style="font-size:17px;color:#888;margin-bottom:5px">NO CABLE? USE THESE</div>
+      <div style="font-size:10px;color:#3a3a3a;margin-bottom:10px;letter-spacing:.06em">DB alternatives for cable exercises today</div>`;
+    cableFree.forEach(cf => {
+      html += `<div class="cable-card">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#444"></div>
+        <div style="font-size:9px;color:#3a3a3a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">REPLACES: ${cf.original}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:500;color:#bbb">${cf.alt}</div>
+          <div style="display:flex;gap:5px">
+            <span class="pill-dark">${cf.sets}×${cf.reps}</span>
+            <span class="pill-dark">${cf.load}</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#444;line-height:1.5">${cf.note}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('page-workout').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// MOBILITY PAGE
+// ─────────────────────────────────────────────
+function renderMobility() {
+  let html = `<div class="bebas" style="font-size:26px;color:#fff;margin-bottom:3px">MOBILITY WORK</div>
+  <div style="font-size:11px;color:#555;margin-bottom:5px">15–20 min · Before sessions or on rest days</div>
+  <div style="font-size:11px;color:#3a3a3a;margin-bottom:20px;line-height:1.6">Pick 2–3 blocks per session, or all 5 for a full mobility day.</div>`;
+
+  MOBILITY.forEach(block => {
+    const open = !!state.mobOpen[block.id];
+    const doneCount = block.exercises.filter((_,i) => state.mobChecked[`${block.id}-${i}`]).length;
+    const allDone = doneCount===block.exercises.length;
+    html += `<div class="mob-block">
+      <div class="mob-header${open?' open':''}" style="border:1px solid ${open?block.color+'55':'#222'}" onclick="toggleMob('${block.id}')">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${block.color};opacity:${open?1:0.3}"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">
+              <div class="bebas" style="font-size:16px;color:${open?block.color:'#ccc'}">${block.label}</div>
+              <span style="font-size:9px;color:${block.color};background:${block.color}18;border:1px solid ${block.color}33;padding:1px 7px;border-radius:3px;font-weight:600">${block.duration}</span>
+              ${allDone?`<span style="font-size:9px;color:#47ff99">✓ DONE</span>`:''}
+            </div>
+            <div style="font-size:10px;color:#555;line-height:1.5">🎯 ${block.why}</div>
+            <div style="font-size:10px;color:#3a3a3a;margin-top:2px">Equipment: ${block.equipment}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;color:${open?block.color:'#444'}">${open?'▲':'▼'}</div>
+            <div style="font-size:10px;color:#3a3a3a">${doneCount}/${block.exercises.length}</div>
+          </div>
+        </div>
+      </div>
+      <div class="mob-body${open?' open':''}" style="border:1px solid ${block.color}44">`;
+    block.exercises.forEach((ex,ei) => {
+      const done = !!state.mobChecked[`${block.id}-${ei}`];
+      html += `<div class="mob-ex" style="border-bottom:${ei<block.exercises.length-1?'1px solid #1a1a1a':'none'};opacity:${done?0.4:1}" onclick="toggleMobEx('${block.id}',${ei})">
+        <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${done?block.color:'#333'};background:${done?block.color:'transparent'};display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;flex-shrink:0;margin-top:2px">${done?'✓':''}</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:3px;flex-wrap:wrap">
+            <div style="font-size:13px;font-weight:500;color:${done?'#444':'#ddd'}">${ex.name}</div>
+            <span style="font-size:10px;color:${block.color};background:${block.color}15;padding:2px 8px;border-radius:4px;font-weight:500;flex-shrink:0">${ex.duration}</span>
+          </div>
+          <div style="font-size:11px;color:${done?'#2e2e2e':'#666'};line-height:1.6">${ex.note}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  html += `<div style="margin-top:14px;padding:13px 14px;border-radius:10px;background:#141414;border:1px solid #1e1e1e;font-size:11px;color:#555;line-height:1.8">
+    <span style="color:#888;font-weight:500">Before upper sessions:</span> Thoracic + Shoulder Rotation<br>
+    <span style="color:#888;font-weight:500">Before lower sessions:</span> Hip Flexors + Ankle + Posterior Chain<br>
+    <span style="color:#888;font-weight:500">Rest day full session:</span> All 5 blocks · ~18–20 min
+  </div>`;
+
+  document.getElementById('page-mobility').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// HISTORY PAGE
+// ─────────────────────────────────────────────
+function renderHistory() {
+  let html = `<div class="bebas" style="font-size:26px;color:#fff;margin-bottom:3px">SESSION HISTORY</div>
+  <div style="font-size:11px;color:#444;margin-bottom:18px">Tap a session day to see exercise detail and timestamps</div>`;
+
+  const weeks = Object.keys(state.allWeeks).sort().reverse();
+  if (!weeks.length) {
+    html += `<div style="color:#333;font-size:12px;text-align:center;margin-top:60px;letter-spacing:.08em">No sessions logged yet.<br>Complete workouts in the Workout tab.</div>`;
+  }
+
+  weeks.forEach(wk => {
+    const wd = state.allWeeks[wk];
+    const dates = wd.completedDates||{};
+    const sessComplete = wd.days.filter((d,di) => d.exercises.every((_,ei) => wd.completed[`${di}-${ei}`])).length;
+    const totalExDone = Object.values(wd.completed).filter(Boolean).length;
+    const totalEx = wd.days.reduce((s,d)=>s+d.exercises.length,0);
+
+    const uniqueDates = [...new Set(Object.values(dates).map(d => {
+      const dt = new Date(d);
+      return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    }))];
+
+    html += `<div class="hist-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div class="bebas" style="font-size:17px;color:#fff">${getWeekLabel(wk)}</div>
+          <div style="font-size:9px;color:#444;margin-top:1px">${wk}</div>
+          ${uniqueDates.length?`<div style="font-size:9px;color:#3a3a3a;margin-top:2px">${uniqueDates.slice(0,3).join(' · ')}${uniqueDates.length>3?` +${uniqueDates.length-3} more`:''}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:${sessComplete===5?'#E8FF47':'#888'};font-weight:500">${sessComplete}/5 sessions</div>
+          <div style="font-size:10px;color:#3a3a3a">${totalExDone}/${totalEx} exercises</div>
+        </div>
+      </div>
+      <div class="hist-day-grid">`;
+
+    wd.days.forEach((d,di) => {
+      const done = d.exercises.every((_,ei) => wd.completed[`${di}-${ei}`]);
+      const partial = !done && d.exercises.some((_,ei) => wd.completed[`${di}-${ei}`]);
+      const dayDates = d.exercises.map((_,ei)=>dates[`${di}-${ei}`]).filter(Boolean).map(iso=>new Date(iso)).sort((a,b)=>a-b);
+      const firstDate = dayDates[0];
+      const histKey = `hist-${wk}-${di}`;
+      html += `<div class="hist-day-tile" style="background:${done?d.color+'33':partial?'#1e1e14':'#1a1a1a'};border-color:${done?d.color+'55':partial?'#3a3a22':'#222'}" onclick="toggleHist('${histKey}')">
+        <div style="font-size:9px;font-family:'Bebas Neue',sans-serif;color:${done?d.color:partial?'#888':'#333'};letter-spacing:.08em">${d.label}</div>
+        <div style="font-size:8px;color:${done?d.color:partial?'#666':'#333'};margin-top:1px">${done?'✓':partial?'~':'–'}</div>
+        ${firstDate?`<div style="font-size:7px;color:#555;margin-top:2px">${firstDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`:''}
+      </div>`;
+    });
+
+    html += `</div>`;
+
+    // Drill-down panels
+    wd.days.forEach((d,di) => {
+      const histKey = `hist-${wk}-${di}`;
+      const isOpen = !!state.histOpen[histKey];
+      html += `<div class="hist-drill${isOpen?' open':''}" style="border:1px solid ${d.color}33;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:7px">
+          <div class="bebas" style="font-size:13px;color:${d.color}">${d.label} — ${d.focus}</div>
+          <div style="font-size:9px;color:#444">${d.exercises.filter((_,ei)=>wd.completed[`${di}-${ei}`]).length}/${d.exercises.length} done</div>
+        </div>`;
+      d.exercises.forEach((ex,ei) => {
+        const key = `${di}-${ei}`;
+        const done = !!wd.completed[key];
+        const logDate = dates[key] ? new Date(dates[key]) : null;
+        const isBW = isBodyweightEx(ex.load);
+        html += `<div class="hist-ex-row" style="opacity:${done?1:0.4}">
+          <div style="flex:1;color:${done?'#ccc':'#444'};font-size:11px">${ex.name}</div>
+          <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+            <span style="font-size:10px;color:${done?d.color:'#333'};background:${done?d.color+'18':'#1a1a1a'};padding:1px 6px;border-radius:3px">${ex.sets}×${ex.reps}</span>
+            ${!isBW?`<span class="pill-dark" style="font-size:10px">${ex.load}</span>`:''}
+          </div>
+          ${logDate?`<div style="font-size:9px;color:#555;flex-shrink:0;white-space:nowrap">${logDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})} ${logDate.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>`:''}
+        </div>`;
+      });
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('page-history').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// PROGRESS PAGE
+// ─────────────────────────────────────────────
+function renderProgress() {
+  const allExNames = [...new Set(PROGRAM.flatMap(d=>d.exercises.map(e=>e.name)))];
+  const selEx = state.selectedEx || allExNames[0];
+
+  let options = allExNames.map(n=>`<option value="${n}"${n===selEx?'selected':''}>${n}</option>`).join('');
+  let html = `<div class="bebas" style="font-size:26px;color:#fff;margin-bottom:3px">EXERCISE PROGRESS</div>
+  <div style="font-size:11px;color:#444;margin-bottom:14px">Load changes week over week + progression recommendations</div>
+  <select class="sel-input" onchange="state.selectedEx=this.value;renderProgress()">${options}</select>`;
+
+  // Collect data
+  const data = [];
+  Object.keys(state.allWeeks).sort().forEach(wk => {
+    const wd = state.allWeeks[wk];
+    wd.days.forEach((d,di) => {
+      const ex = d.exercises.find(e=>e.name===selEx);
+      if (!ex) return;
+      const anyDone = d.exercises.some((_,ei) => wd.completed[`${di}-${ei}`]);
+      if (anyDone) data.push({wk,ex});
+    });
+  });
+
+  if (!data.length) {
+    html += `<div style="color:#333;font-size:12px;text-align:center;margin-top:40px">No data yet for this exercise.<br>Log a session to start tracking.</div>`;
+  } else {
+    const prog = getProgression(selEx);
+    if (prog) {
+      html += `<div style="padding:10px 14px;border-radius:8px;margin-bottom:14px;background:${prog.type==='weight'?'#E8FF4710':'#47ff9910'};border:1px solid ${prog.type==='weight'?'#E8FF4733':'#47ff9933'}">
+        <div style="font-size:11px;color:${prog.type==='weight'?'#E8FF47':'#47ff99'};font-weight:500">📈 TRAINER RECOMMENDATION</div>
+        <div style="font-size:11px;color:${prog.type==='weight'?'#E8FF47':'#47ff99'};margin-top:3px">${prog.msg}</div>
+      </div>`;
+    }
+    data.forEach((entry,i) => {
+      const isLatest = i===data.length-1;
+      html += `<div class="prog-entry">
+        <div style="width:78px;font-size:10px;color:#555;flex-shrink:0">${new Date(entry.wk).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+        <div class="prog-bar-wrap" style="border-color:${isLatest?'#E8FF4744':'#1e1e1e'}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:${isLatest?'#E8FF47':'#ccc'};font-weight:500">${entry.ex.load}</span>
+            <span style="font-size:10px;color:#555">${entry.ex.sets}×${entry.ex.reps}</span>
+          </div>
+          ${entry.ex.setWeights&&entry.ex.setWeights.length>1?`<div style="font-size:9px;color:#444;margin-top:3px">Sets: ${entry.ex.setWeights.join(' / ')}</div>`:''}
+        </div>
+        ${isLatest?`<div style="font-size:10px;color:#E8FF47;flex-shrink:0">← now</div>`:''}
+      </div>`;
+    });
+  }
+
+  // Overall stats
+  const weeks = Object.keys(state.allWeeks);
+  if (weeks.length) {
+    const totalSess = Object.values(state.allWeeks).reduce((s,wd)=>s+wd.days.filter((d,di)=>d.exercises.every((_,ei)=>wd.completed[`${di}-${ei}`])).length,0);
+    const totalEx = Object.values(state.allWeeks).reduce((s,wd)=>s+Object.values(wd.completed).filter(Boolean).length,0);
+    const fullWeeks = Object.values(state.allWeeks).filter(wd=>wd.days.every((d,di)=>d.exercises.every((_,ei)=>wd.completed[`${di}-${ei}`]))).length;
+    html += `<div class="bebas" style="font-size:17px;color:#fff;margin:26px 0 10px">OVERALL STATS</div>
+    <div class="stat-grid">
+      ${[['Weeks Logged',weeks.length],['Full Weeks',fullWeeks],['Total Sessions',totalSess],['Total Exercises',totalEx]].map(([l,v])=>`
+      <div class="stat-card">
+        <div class="bebas" style="font-size:26px;color:#E8FF47">${v}</div>
+        <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.08em">${l}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  document.getElementById('page-progress').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// ACTIONS
+// ─────────────────────────────────────────────
+function showPage(name) {
+  state.view = name;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => { if (b.textContent.includes(name)) b.classList.add('active'); });
+  renderPage();
+}
+
+function renderPage() {
+  if (state.view==='workout') renderWorkout();
+  else if (state.view==='mobility') renderMobility();
+  else if (state.view==='history') renderHistory();
+  else if (state.view==='progress') renderProgress();
+}
+
+function changeWeek(dir) {
+  if (dir===1 && state.weekOffset===0) return;
+  state.weekOffset += dir;
+  renderWorkout();
+}
+
+function setDay(i) {
+  state.activeDay = i;
+  state.editingKey = null;
+  renderWorkout();
+}
+
+function toggleCheck(key) {
+  if (state.editingKey) return;
+  const wk = getWeekKey(state.weekOffset);
+  ensureWeek(wk);
+  const wd = state.allWeeks[wk];
+  const wasChecked = !!wd.completed[key];
+  wd.completed[key] = !wasChecked;
+  if (!wasChecked) wd.completedDates[key] = new Date().toISOString();
+  else delete wd.completedDates[key];
+  saveStorage();
+  renderWorkout();
+}
+
+function startEdit(e, key) {
+  e.stopPropagation();
+  const wk = getWeekKey(state.weekOffset);
+  const wd = getWeekData(wk);
+  let ex;
+  if (key.startsWith('f-')) {
+    const parts = key.split('-');
+    const fi = parseInt(parts[1]), ei = parseInt(parts[2]);
+    const fins = wd.finishers || FINISHERS.map(f=>({exercises:f.exercises.map(ex=>({...ex}))}));
+    ex = fins[fi].exercises[ei];
+  } else {
+    const parts = key.split('-');
+    const di = parseInt(parts[0]), ei = parseInt(parts[1]);
+    ex = wd.days[di].exercises[ei];
+  }
+  const numSets = parseInt(ex.sets)||3;
+  const sw = ex.setWeights && ex.setWeights.length===numSets ? ex.setWeights : Array(numSets).fill(ex.load);
+  state.editingKey = key;
+  state.editValues = {sets:ex.sets, reps:ex.reps, load:ex.load, setWeights:[...sw]};
+  renderWorkout();
+}
+
+function updateEditField(field, val) { state.editValues[field] = val; }
+
+function updateEditSets(key, val) {
+  const n = Math.max(1,Math.min(10,parseInt(val)||1));
+  const cur = state.editValues.setWeights||[];
+  state.editValues.sets = String(n);
+  state.editValues.setWeights = Array(n).fill(null).map((_,i)=>cur[i]!==undefined?cur[i]:(cur[cur.length-1]||state.editValues.load));
+  renderWorkout();
+}
+
+function updateSetWeight(key, si, val) { state.editValues.setWeights[si] = val; }
+
+function saveEdit(key) {
+  const wk = getWeekKey(state.weekOffset);
+  ensureWeek(wk);
+  const wd = state.allWeeks[wk];
+  const sw = state.editValues.setWeights||[];
+  const unique = [...new Set(sw.filter(Boolean))];
+  const displayLoad = unique.length===1?unique[0]:unique.length>1?unique.join(' / '):state.editValues.load;
+  const updated = {...state.editValues, load:displayLoad};
+
+  if (key.startsWith('f-')) {
+    const parts = key.split('-');
+    const fi = parseInt(parts[1]), ei = parseInt(parts[2]);
+    if (!wd.finishers) wd.finishers = FINISHERS.map(f=>({exercises:f.exercises.map(ex=>({...ex}))}));
+    Object.assign(wd.finishers[fi].exercises[ei], updated);
+  } else {
+    const parts = key.split('-');
+    const di = parseInt(parts[0]), ei = parseInt(parts[1]);
+    Object.assign(wd.days[di].exercises[ei], updated);
+  }
+  state.editingKey = null;
+  saveStorage();
+  renderWorkout();
+}
+
+function cancelEdit() { state.editingKey = null; renderWorkout(); }
+
+function toggleMob(id) {
+  state.mobOpen[id] = !state.mobOpen[id];
+  renderMobility();
+}
+
+function toggleMobEx(blockId, ei) {
+  const k = `${blockId}-${ei}`;
+  state.mobChecked[k] = !state.mobChecked[k];
+  renderMobility();
+}
+
+function toggleHist(key) {
+  state.histOpen[key] = !state.histOpen[key];
+  renderHistory();
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+loadStorage();
+renderPage();
+</script>
+</body>
+</html>
