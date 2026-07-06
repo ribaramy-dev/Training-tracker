@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Training Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d0d;color:#f0f0f0;font-family:'DM Mono',monospace;min-height:100vh;padding-bottom:80px}
+.nav{background:#0d0d0d;border-bottom:1px solid #1a1a1a;position:sticky;top:0;z-index:100;padding:10px 14px 0}
+.nav-inner{max-width:640px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:4px}
+.nav-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.06em;color:#fff}
+.nav-tabs{display:flex;gap:2px;flex-wrap:wrap}
+.nav-btn{background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:6px 7px;border-radius:6px;color:#444;transition:all .15s}
+.nav-btn.active{background:#1e1e1e;color:#f0f0f0}
+.page{max-width:640px;margin:0 auto;padding:16px 14px 40px;display:none}
+.page.active{display:block}
+.bebas{font-family:'Bebas Neue',sans-serif;letter-spacing:.06em}
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.week-btn{background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#888;font-size:11px;padding:5px 12px;cursor:pointer;font-family:'DM Mono',monospace}
+.pb-track{height:4px;background:#1e1e1e;border-radius:2px;overflow:hidden;margin-bottom:14px}
+.pb-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.day-tabs{display:flex;border-bottom:1px solid #1e1e1e;margin-bottom:16px;overflow-x:auto}
+.day-tab{flex:1;min-width:56px;padding:8px 4px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+.day-tab .dt-label{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.06em}
+.day-tab .dt-type{font-size:7px;letter-spacing:.06em;text-transform:uppercase;padding:2px 3px;border-radius:3px;margin-top:3px;font-weight:500}
+.day-tab .dt-dot{width:5px;height:5px;border-radius:50%;margin:3px auto 0}
+.day-tab .dt-date{font-size:8px;color:#444;margin-top:2px}
+.sec-div{font-size:9px;color:#3a3a3a;letter-spacing:.14em;text-transform:uppercase;margin:14px 0 7px;padding-left:8px;border-left:2px solid #2a2a2a}
+.ex-card{background:#161616;border:1px solid #222;border-radius:10px;padding:12px 14px;margin-bottom:9px;position:relative;overflow:hidden;transition:background .2s,opacity .2s,border-color .2s}
+.ex-card.plyo{background:#1a1212;border-color:#2e1e1e}
+.ex-card.abs{background:#121a14;border-color:#1e2e20}
+.ex-card.skipped{opacity:.3;background:#111}
+.ex-card.done{opacity:.4;background:#111}
+.ex-card.editing{background:#1a1a1a!important;border-color:var(--dc)!important}
+.ex-card.dragging{opacity:.4;border-style:dashed}
+.ex-card.drag-over{border-top:2px solid var(--dc)}
+.ex-row-inner{display:flex;align-items:flex-start;gap:8px}
+.drag-handle{font-size:14px;color:#333;cursor:grab;flex-shrink:0;margin-top:3px;padding:0 2px;user-select:none;touch-action:none}
+.drag-handle:active{cursor:grabbing;color:#666}
+.check-circle{width:22px;height:22px;border-radius:50%;border:2px solid #444;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all .2s;user-select:none;flex-shrink:0}
+.skip-btn{background:none;border:1px solid #2a2a2a;border-radius:4px;color:#3a3a3a;font-size:9px;padding:1px 6px;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:.05em;flex-shrink:0}
+.skip-btn.active{background:#2a1a1a;border-color:#ff6b6b44;color:#ff6b6b88}
+.ex-name{font-size:13px;font-weight:500;color:#e8e8e8}
+.ex-meta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;align-items:center;margin-top:4px}
+.pill-accent{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.pill-dark{font-size:10px;color:#888;background:#1e1e1e;padding:2px 7px;border-radius:4px;border:1px solid #2a2a2a}
+.ex-note{font-size:11px;color:#666;line-height:1.5}
+.tag-pill{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;letter-spacing:.1em;margin-left:4px;vertical-align:middle}
+.edit-btn{background:none;border:1px solid #2a2a2a;border-radius:5px;color:#444;font-size:10px;padding:2px 7px;cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;flex-shrink:0}
+.prog-banner{border-radius:7px;padding:8px 11px;margin-bottom:8px;font-size:10px;line-height:1.6;background:#E8FF4710;border:1px solid #E8FF4730}
+.edit-form{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.edit-field{display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px}
+.edit-label{font-size:9px;color:#555;letter-spacing:.1em;text-transform:uppercase}
+.edit-input{background:#0d0d0d;border:1px solid #555;border-radius:5px;color:#f0f0f0;font-size:11px;font-family:'DM Mono',monospace;padding:4px 7px;width:100%;outline:none}
+.save-btn{border:none;border-radius:5px;color:#000;font-size:10px;padding:4px 10px;cursor:pointer;font-family:'DM Mono',monospace;font-weight:600}
+.cancel-btn{background:none;border:1px solid #333;border-radius:5px;color:#555;font-size:10px;padding:4px 10px;cursor:pointer;font-family:'DM Mono',monospace}
+.complete-banner{margin-top:18px;padding:14px 18px;border-radius:10px;text-align:center}
+.finisher-section{margin-top:24px}
+.fin-card{border-radius:10px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden;transition:all .2s}
+.cable-section{margin-top:24px}
+.cable-card{background:#0f0f0f;border:1px solid #1e1e1e;border-radius:10px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden}
+.mob-block{margin-bottom:10px}
+.mob-header{background:#141414;border-radius:10px;padding:12px 14px;cursor:pointer;position:relative;overflow:hidden}
+.mob-header.open{border-radius:10px 10px 0 0}
+.mob-body{border-top:none;border-radius:0 0 10px 10px;background:#0f0f0f;padding:4px 12px 10px;display:none}
+.mob-body.open{display:block}
+.mob-ex{display:flex;gap:10px;align-items:flex-start;padding:10px 4px;cursor:pointer}
+.hist-card{background:#141414;border:1px solid #222;border-radius:10px;padding:13px 14px;margin-bottom:10px}
+.hist-day-grid{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.hist-day-tile{flex:1;min-width:52px;border-radius:6px;padding:6px 3px;text-align:center;cursor:pointer;border:1px solid #222;transition:all .15s}
+.hist-drill{background:#0f0f0f;border-radius:8px;padding:9px 11px;margin-top:5px;display:none}
+.hist-drill.open{display:block}
+.hist-ex-row{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;padding:6px 0;border-bottom:1px solid #1a1a1a;flex-wrap:wrap}
+.hist-ex-row:last-child{border-bottom:none}
+.prog-entry{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.prog-bar-wrap{flex:1;background:#161616;border:1px solid #1e1e1e;border-radius:8px;padding:9px 13px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:24px}
+.stat-card{background:#141414;border:1px solid #1e1e1e;border-radius:10px;padding:13px 14px}
+select.sel-input{background:#161616;border:1px solid #2a2a2a;border-radius:6px;color:#ccc;font-size:11px;font-family:'DM Mono',monospace;padding:6px 10px;outline:none;width:100%;cursor:pointer;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="nav-inner">
+    <div class="nav-title">TRAINING TRACKER</div>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="showPage('workout')">🏋️ workout</button>
+      <button class="nav-btn" onclick="showPage('mobility')">🧘 mobility</button>
+      <button class="nav-btn" onclick="showPage('history')">📅 history</button>
+      <button class="nav-btn" onclick="showPage('progress')">📈 progress</button>
+    </div>
+  </div>
+</div>
+<div id="page-workout" class="page active"></div>
+<div id="page-mobility" class="page"></div>
+<div id="page-history" class="page"></div>
+<div id="page-progress" class="page"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// PROGRAM — default template only, never used as weights source
+// ─────────────────────────────────────────────
+const PROGRAM_DAYS = [
+  { label:"MON", type:"UPPER", focus:"Full Upper", tag:"Chest · Back · Shoulders · Arms", color:"#E8FF47", textColor:"#0a0a0a",
+    exercises:[
+      {name:"Box Jumps",           sets:"3",reps:"5", load:"Bodyweight",note:"⚡ Reset between reps — land soft, absorb fully",exTag:"PLYO"},
+      {name:"DB Chest Press",      sets:"4",reps:"8", load:"40 lb each",note:"Independent setup — knee-kick drill, press hard"},
+      {name:"Seated Cable Row",    sets:"4",reps:"10",load:"40 lb",     note:"Chest tall, drive elbows back, squeeze at end",setWeights:["40 lb","40 lb","50 lb","50 lb"]},
+      {name:"Lat Pulldown",        sets:"3",reps:"8", load:"70 lb",     note:"3-sec eccentric — own the stretch"},
+      {name:"Seated DB Shoulder Press",sets:"3",reps:"6",load:"30 lb each",note:"After pulling — shoulders warm, push toward 3×8"},
+      {name:"Hammer Curls",        sets:"3",reps:"8", load:"20 lb each",note:"Slow and deliberate — squeeze at top"},
+      {name:"Hollow Body Hold",    sets:"3",reps:"25",load:"Bodyweight",note:"🔥 Lower back flat, legs low, steady breath",exTag:"ABS"},
+    ]},
+  { label:"TUE", type:"LOWER", focus:"Posterior Chain", tag:"Glutes · Hamstrings · Hinge", color:"#FF6B6B", textColor:"#fff",
+    exercises:[
+      {name:"Lateral Skater Hops", sets:"3",reps:"8", load:"Bodyweight",note:"⚡ Push hard laterally, stick every landing",exTag:"PLYO"},
+      {name:"Hip Thrust",          sets:"4",reps:"10",load:"90 lb",     note:"2-sec pause at top on final set — full glute squeeze"},
+      {name:"Romanian Deadlift",   sets:"4",reps:"10",load:"35 lb each",note:"Slow descent — feel the hamstring load, don't round"},
+      {name:"Cable Glute Kickback",sets:"3",reps:"12",load:"15 lb",     note:"Ankle cuff — squeeze at full extension, no swinging"},
+      {name:"Hamstring Curl Machine",sets:"3",reps:"8",load:"80 lb",    note:"3-sec eccentric — control on the way down"},
+      {name:"Dead Bug",            sets:"3",reps:"8", load:"Bodyweight",note:"🔥 Opposite arm/leg, lower back stays flat",exTag:"ABS"},
+    ]},
+  { label:"WED", type:"PUSH", focus:"Push", tag:"Chest · Shoulders · Triceps", color:"#47C4FF", textColor:"#0a0a0a",
+    exercises:[
+      {name:"Plyo Push-Up",        sets:"3",reps:"5", load:"Bodyweight",note:"⚡ Explode off floor, catch soft — max intent",exTag:"PLYO"},
+      {name:"Incline DB Press",    sets:"4",reps:"8", load:"40 lb each",note:"Primary chest mover — earn the 45s"},
+      {name:"Arnold Press",        sets:"3",reps:"10",load:"20 lb each",note:"Full rotation — all three delt heads"},
+      {name:"DB Lateral Raise",    sets:"3",reps:"12",load:"10 lb each",note:"Lead with elbow, slight forward lean, no shrugging"},
+      {name:"Cable Tricep Pushdown",sets:"3",reps:"12",load:"25 lb",    note:"Elbow pinned at side — squeeze hard at lockout"},
+      {name:"Weighted Sit-Up",     sets:"3",reps:"12",load:"10 lb plate",note:"🔥 Controlled — plate to chest, no yanking neck",exTag:"ABS"},
+    ]},
+  { label:"THU", type:"PULL", focus:"Pull", tag:"Back · Biceps · Rear Delts · Grip", color:"#B847FF", textColor:"#fff",
+    exercises:[
+      {name:"Pull-Up Negatives",   sets:"3",reps:"4", load:"Bodyweight",note:"⚡ Jump to top, 4-sec controlled lower",exTag:"PLYO"},
+      {name:"Lat Pulldown",        sets:"4",reps:"8", load:"70 lb",     note:"3-sec eccentric, full stretch at top"},
+      {name:"Single-Arm DB Row",   sets:"4",reps:"10",load:"40 lb each",note:"Push toward 45s — brace hard, row to hip"},
+      {name:"Cable Face Pull",     sets:"3",reps:"15",load:"20 lb",     note:"High anchor, elbows wide — highest ROI shoulder exercise"},
+      {name:"Incline DB Curl",     sets:"3",reps:"10",load:"15 lb each",note:"Full stretch at bottom — pure bicep"},
+      {name:"DB Wrist Curl + Reverse Curl",sets:"3",reps:"12",load:"10 lb each",note:"Grip strength — slow and controlled both directions",exTag:"GRIP"},
+      {name:"Hanging Knee Raise",  sets:"3",reps:"10",load:"Bodyweight",note:"🔥 Tuck hard, lower slow, no swinging",exTag:"ABS"},
+    ]},
+  { label:"FRI", type:"LOWER", focus:"Quad + Power", tag:"Quads · Glutes · Athletic · Core", color:"#FF9F47", textColor:"#0a0a0a",
+    exercises:[
+      {name:"Broad Jump",          sets:"3",reps:"5", load:"Bodyweight",note:"⚡ Max distance — explode, stick landing",exTag:"PLYO"},
+      {name:"Front Squat",         sets:"4",reps:"8", load:"35 lb each",note:"Upright torso — elbows high, position is everything"},
+      {name:"Bulgarian Split Squat",sets:"3",reps:"8",load:"25 lb each",note:"Rear foot elevated — torso tall, knee tracks over toe"},
+      {name:"Cable Hip Abduction", sets:"3",reps:"12",load:"10 lb",     note:"Ankle cuff, stand side-on — feel glute med, no leaning"},
+      {name:"Leg Extension Machine",sets:"3",reps:"10",load:"50 lb",    note:"Full extension, 2-sec hold at top"},
+      {name:"Cable Woodchop",      sets:"3",reps:"10",load:"15 lb",     note:"🔥 Rotate from hips — athletic rotational power",exTag:"ABS"},
+    ]},
+];
+
+const FINISHERS = [
+  {exercises:[
+    {name:"DB Chest Fly",sets:"3",reps:"12",load:"15 lb each",note:"Full stretch at bottom — pure pec stretch under load"},
+    {name:"Zottman Curl",sets:"3",reps:"10",load:"12 lb each",note:"Curl up supinated, rotate pronated on way down"},
+    {name:"DB Rear Delt Fly",sets:"3",reps:"15",load:"10 lb each",note:"Hinge forward 45°, arms wide, lead with elbows"},
+  ]},
+  {exercises:[
+    {name:"Glute Bridge Hold",sets:"3",reps:"45",load:"Bodyweight",note:"Squeeze hard at top and hold — serious glute endurance"},
+    {name:"Copenhagen Plank",sets:"3",reps:"25",load:"Bodyweight",note:"Side plank, top foot on bench — brutal hip stability"},
+    {name:"Single-Leg Glute Bridge",sets:"3",reps:"12",load:"Bodyweight",note:"One leg extended, drive through heel"},
+  ]},
+  {exercises:[
+    {name:"DB Skull Crusher",sets:"3",reps:"12",load:"12 lb each",note:"Lower DBs toward temples — hits long tricep head"},
+    {name:"Pike Push-Up",sets:"3",reps:"8",load:"Bodyweight",note:"Hips high, lower head to floor — overhead bridge"},
+    {name:"DB Front Raise",sets:"3",reps:"12",load:"10 lb each",note:"Alternate arms, slow — anterior delt volume"},
+  ]},
+  {exercises:[
+    {name:"DB Shrug",sets:"3",reps:"15",load:"35 lb each",note:"Slow up, 2-sec hold, slow down — upper trap strength"},
+    {name:"Inverted Row",sets:"3",reps:"10",load:"Bodyweight",note:"Heels on floor, pull chest to bench edge"},
+    {name:"Farmer's Carry",sets:"3",reps:"30m",load:"40 lb each",note:"Walk tall, grip tight — loaded carry for grip endurance"},
+  ]},
+  {exercises:[
+    {name:"Wall Sit with DB",sets:"3",reps:"45",load:"20 lb each",note:"DBs on thighs — mental toughness quad finisher"},
+    {name:"Lateral Half-Squat Steps",sets:"3",reps:"15",load:"Bodyweight",note:"Slow lateral steps in half-squat — glute med"},
+    {name:"Reverse Lunge to Knee Drive",sets:"3",reps:"10",load:"15 lb each",note:"Step back, drive knee up on return — athletic power"},
+  ]},
+];
+const FINISHER_IDX = {MON:0,TUE:1,WED:2,THU:3,FRI:4};
+const DAY_LABELS = ["MON","TUE","WED","THU","FRI"];
+
+const CABLE_FREE = {
+  MON:[{original:"Seated Cable Row",alt:"DB Bent-Over Row (Both Arms)",sets:"4",reps:"10",load:"30 lb each",note:"Hinge at hip, spine neutral, row both DBs to lower ribs."}],
+  TUE:[{original:"Cable Glute Kickback",alt:"Donkey Kick (DB in knee crook)",sets:"3",reps:"12",load:"Light DB",note:"On all fours, DB behind knee, kick back and squeeze."}],
+  WED:[{original:"Cable Tricep Pushdown",alt:"DB Overhead Tricep Extension",sets:"3",reps:"12",load:"20 lb DB",note:"Both hands on one DB overhead — lower behind head, extend up."}],
+  THU:[{original:"Cable Face Pull",alt:"DB Rear Delt Fly (Bent Over)",sets:"3",reps:"15",load:"10 lb each",note:"Hinge forward 45°, lead with elbows to shoulder height."}],
+  FRI:[
+    {original:"Cable Hip Abduction",alt:"Side-Lying DB Hip Abduction",sets:"3",reps:"15",load:"Light DB on thigh",note:"Lie on side, DB on outer thigh, lift against load. Controlled."},
+    {original:"Cable Woodchop",alt:"DB Rotational Slam",sets:"3",reps:"10",load:"10 lb DB",note:"DB at shoulder height, rotate explosively to opposite hip."},
+  ],
+};
+
+const MOBILITY = [
+  {id:"hips",label:"Hip Flexors & Hip Mobility",color:"#FF9F47",why:"Unlocks squat depth, RDL range, reduces knee stress",equipment:"Bench, Bodyweight",duration:"5–6 min",exercises:[
+    {name:"90/90 Hip Switch",duration:"60 sec",note:"Both knees at 90°. Rotate side to side slowly. Torso tall."},
+    {name:"Couch Stretch",duration:"45 sec each side",note:"Rear knee on floor, front foot forward. Drive hips forward."},
+    {name:"Deep Squat Hold",duration:"60 sec",note:"Feet shoulder-width. Hold DB at chest for counterbalance."},
+    {name:"Banded Hip Circle",duration:"30 sec each side",note:"Band around thighs, half-squat. Circle knee out and around."},
+  ]},
+  {id:"thoracic",label:"Thoracic Spine & Shoulder",color:"#47C4FF",why:"Unlocks overhead pressing, pull-up depth, squat posture",equipment:"Bench, DB (light)",duration:"5–6 min",exercises:[
+    {name:"Bench T-Spine Extension",duration:"60 sec",note:"Upper back on bench edge, hands behind head, chest opens."},
+    {name:"Thread the Needle",duration:"45 sec each side",note:"On all fours, thread arm under and rotate. Opens thoracic."},
+    {name:"Wall Shoulder Slides",duration:"10 reps",note:"Back flat against wall, slide arms overhead keeping contact."},
+    {name:"DB Chest Opener",duration:"60 sec",note:"Lie on bench, light DB overhead. Let gravity open chest."},
+  ]},
+  {id:"ankle",label:"Ankle Dorsiflexion",color:"#E8FF47",why:"Affects squat depth, landing mechanics, knee tracking",equipment:"Bodyweight, Wall",duration:"4–5 min",exercises:[
+    {name:"Wall Ankle Drill",duration:"10 reps each side",note:"Foot 3-4 inches from wall. Drive knee to wall without heel lifting."},
+    {name:"Elevated Heel Squat Hold",duration:"60 sec",note:"Heels on 10 lb plate, squat to bottom and hold."},
+    {name:"Calf Stretch on Step",duration:"45 sec each side",note:"Drop heel below step. Straight leg then bent knee."},
+  ]},
+  {id:"posterior",label:"Posterior Chain Flexibility",color:"#FF6B6B",why:"Increases RDL range, hamstring strength, protects lower back",equipment:"Bench, DB",duration:"4–5 min",exercises:[
+    {name:"Standing Hamstring Sweep",duration:"10 reps each side",note:"Hold DB for counterbalance. Hinge at hip, reach toward floor."},
+    {name:"Single-Leg Bench Hamstring Stretch",duration:"45 sec each side",note:"Heel on bench, hinge forward slowly. Spine neutral."},
+    {name:"Hip Hinge with Reach",duration:"10 reps",note:"DB along spine. Hinge keeping head, upper back, tailbone in contact."},
+    {name:"Supine Glute Stretch (Figure 4)",duration:"45 sec each side",note:"Lie on back, ankle over opposite knee, pull toward chest."},
+  ]},
+  {id:"shoulder",label:"Shoulder Rotation & Scapular Control",color:"#B847FF",why:"Builds pull-up strength, protects shoulder under load",equipment:"Light DB, Cable",duration:"4–5 min",exercises:[
+    {name:"Side-Lying External Rotation",duration:"12 reps each side",note:"Lie on side, elbow at 90°, light DB. Rotate forearm up."},
+    {name:"Cable Face Pull (Light)",duration:"15 reps",note:"Pull to face, elbows flared wide and high."},
+    {name:"Scapular Pull-Up",duration:"10 reps",note:"Hang from bar. Squeeze shoulder blades down without bending elbows."},
+    {name:"Pec Stretch",duration:"45 sec each side",note:"Cable or doorframe. Press arm against surface, rotate away."},
+  ]},
+];
+
+// ─────────────────────────────────────────────
+// WEEK UTILITIES — weeks start Sunday
+// ─────────────────────────────────────────────
+function getSundayKey(offsetWeeks=0){
+  const now=new Date(), dow=now.getDay(), sun=new Date(now);
+  sun.setDate(now.getDate()-dow+offsetWeeks*7); sun.setHours(0,0,0,0);
+  return sun.toISOString().split('T')[0];
+}
+function getDayDate(sunKey,label){
+  const off={MON:1,TUE:2,WED:3,THU:4,FRI:5};
+  const d=new Date(sunKey); d.setDate(d.getDate()+(off[label]||0)); return d;
+}
+function fmt(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function fmtDT(iso){const d=new Date(iso);return fmt(d)+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});}
+function weekLabel(sk){
+  const s=new Date(sk),e=new Date(s); e.setDate(s.getDate()+5);
+  return `${fmt(s)} – ${fmt(e)}`;
+}
+
+// ─────────────────────────────────────────────
+// PROGRESSION
+// ─────────────────────────────────────────────
+function isBW(load){return (load||'').toLowerCase().includes('bodyweight');}
+function isMachine(name){return ['machine','pulldown','extension','hip thrust','press machine'].some(m=>name.toLowerCase().includes(m));}
+function suggestInc(name){return isMachine(name)?'5–10 lb':'5 lb';}
+
+// Find most recent logged data for exName across ALL weeks
+function getMostRecentLogged(exName){
+  const weeks=Object.keys(S.allWeeks).sort().reverse();
+  for(const wk of weeks){
+    const wd=S.allWeeks[wk];
+    for(let di=0;di<(wd.days||[]).length;di++){
+      const ex=(wd.days[di].exercises||[]).find(e=>e.name===exName);
+      if(!ex) continue;
+      const anyDone=(wd.days[di].exercises||[]).some((_,ei)=>(wd.logged||{})[`${di}-${ei}`]);
+      if(anyDone) return {wk,ex};
+    }
+  }
+  return null;
+}
+
+function getProgFlag(sunKey,exName,dayLabel,curEx){
+  if(isBW(curEx.load)) return null;
+  // find second-most-recent logged entry for comparison
+  const weeks=Object.keys(S.allWeeks).sort().reverse();
+  const entries=[];
+  for(const wk of weeks){
+    const wd=S.allWeeks[wk];
+    for(let di=0;di<(wd.days||[]).length;di++){
+      const ex=(wd.days[di].exercises||[]).find(e=>e.name===exName);
+      if(!ex) continue;
+      const anyDone=(wd.days[di].exercises||[]).some((_,ei)=>(wd.logged||{})[`${di}-${ei}`]);
+      if(anyDone){entries.push({wk,ex});break;}
+    }
+    if(entries.length>=2) break;
+  }
+  if(entries.length<2) return null;
+  const last=entries[0], prev=entries[1];
+  if(parseInt(last.ex.reps)>=parseInt(last.ex.reps) && parseInt(prev.ex.reps)>=parseInt(prev.ex.reps)){
+    return {lastLoad:last.ex.load,lastReps:last.ex.reps,lastSets:last.ex.sets,prevLoad:prev.ex.load,prevReps:prev.ex.reps,suggestion:suggestInc(exName),weekLabel:weekLabel(last.wk)};
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// STATE & STORAGE
+// ─────────────────────────────────────────────
+const S={
+  view:'workout', activeDay:0, weekOffset:0,
+  editingKey:null, editValues:{},
+  dragSrc:null,
+  mobOpen:{}, mobChecked:{}, histOpen:{},
+  selectedEx:PROGRAM_DAYS[0].exercises[0].name,
+  allWeeks:{},
+};
+const STORAGE_KEY='training-tracker-v4';
+
+function loadStorage(){
+  try{const s=localStorage.getItem(STORAGE_KEY);if(s)S.allWeeks=JSON.parse(s);}catch(e){}
+}
+function saveStorage(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(S.allWeeks));}
+  catch(e){alert('Storage error — check browser storage settings.');}
+}
+
+// Build a new week — seed weights from most recent logged session per exercise
+function buildWeek(sunKey){
+  const weeks=Object.keys(S.allWeeks).sort().reverse();
+  return {
+    sunKey,
+    days:PROGRAM_DAYS.map((pd,di)=>({
+      ...pd,
+      exercises:pd.exercises.map((ex)=>{
+        const recent=getMostRecentLogged(ex.name);
+        if(recent){
+          return {...ex, load:recent.ex.load, reps:recent.ex.reps, sets:recent.ex.sets,
+            setWeights:recent.ex.setWeights?[...recent.ex.setWeights]:undefined,
+            setReps:recent.ex.setReps?[...recent.ex.setReps]:undefined};
+        }
+        return {...ex};
+      }),
+    })),
+    // order: array of ex indices per day, reset each new week
+    order:PROGRAM_DAYS.map(pd=>pd.exercises.map((_,i)=>i)),
+    // skipped: set of "di-ei" keys
+    skipped:{},
+    logged:{}, finisherLogged:{},
+    finishers:FINISHERS.map(f=>({exercises:f.exercises.map(ex=>({...ex}))})),
+  };
+}
+
+function ensureWeek(sk){
+  if(!S.allWeeks[sk]){S.allWeeks[sk]=buildWeek(sk);saveStorage();}
+}
+function getWD(sk){ensureWeek(sk);return S.allWeeks[sk];}
+function curSK(){return getSundayKey(S.weekOffset);}
+
+// ─────────────────────────────────────────────
+// RENDER HELPERS
+// ─────────────────────────────────────────────
+const TAG_COLORS={PLYO:{bg:'#ff6b6b22',color:'#ff6b6b'},ABS:{bg:'#47ff9922',color:'#47ff99'},GRIP:{bg:'#ffb84722',color:'#ffb847'}};
+
+function progBanner(flag){
+  if(!flag) return '';
+  return `<div class="prog-banner">
+    <div style="color:#E8FF47;font-weight:600;font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">📈 READY TO PROGRESS</div>
+    <div style="color:#E8FF47;font-size:10px">Recent: ${flag.lastSets}×${flag.lastReps} @ ${flag.lastLoad}</div>
+    <div style="color:#aaa;font-size:10px;margin-top:1px">Consider +${flag.suggestion}</div>
+  </div>`;
+}
+
+function renderSetTable(ex, dayColor, isEdit, isBWex){
+  if(!isEdit){
+    // display only
+    if((!ex.setWeights||ex.setWeights.length<=1)&&(!ex.setReps||ex.setReps.length<=1)) return '';
+    const n=parseInt(ex.sets)||3;
+    const rows=Array(n).fill(0).map((_,i)=>{
+      const r=(ex.setReps||[])[i]||ex.reps;
+      const w=(ex.setWeights||[])[i]||ex.load;
+      return `<span style="font-size:9px;color:#3a3a3a;margin-right:10px">S${i+1}: ${r}r${!isBWex?' @ '+w:''}</span>`;
+    }).join('');
+    return `<div style="margin-top:2px;flex-wrap:wrap;display:flex">${rows}</div>`;
+  }
+  // edit rows
+  const sw=S.editValues.setWeights||[];
+  const sr=S.editValues.setReps||[];
+  const n=sw.length;
+  const rows=Array(n).fill(0).map((_,i)=>`
+    <div style="display:flex;gap:5px;align-items:flex-end;margin-bottom:6px">
+      <div style="width:34px;font-size:9px;color:#3a3a3a;padding-bottom:5px;flex-shrink:0">S${i+1}</div>
+      <div class="edit-field">
+        ${i===0?'<div class="edit-label">Reps</div>':''}
+        <input class="edit-input" value="${sr[i]||''}" placeholder="e.g. 8" onchange="S.editValues.setReps[${i}]=this.value">
+      </div>
+      ${!isBWex?`<div class="edit-field">
+        ${i===0?'<div class="edit-label">Weight</div>':''}
+        <input class="edit-input" value="${sw[i]||''}" placeholder="e.g. 40 lb" onchange="S.editValues.setWeights[${i}]=this.value">
+      </div>`:''}
+    </div>`).join('');
+  return `<div style="margin-top:4px">
+    <div class="edit-label" style="margin-bottom:6px">Per set — reps${!isBWex?' + weight':''}</div>
+    ${rows}
+  </div>`;
+}
+
+function renderExCard(ex, key, dayColor, isDone, isSkipped, sunKey, dayLabel, isFinisher, dragIdx){
+  const isEditing=S.editingKey===key;
+  const bw=isBW(ex.load);
+  const tag=ex.exTag;
+  const tc=tag&&TAG_COLORS[tag];
+  const rowCls=tag==='PLYO'?'plyo':tag==='ABS'?'abs':'';
+  const checkFn=key.startsWith('f-')?`toggleFinisher('${key}')`:`toggleCheck('${key}')`;
+  const checkStyle=isDone?`border-color:${dayColor};background:${dayColor};color:#000`:'border-color:#444';
+  const flag=(!isFinisher&&!bw&&!isSkipped)?getProgFlag(sunKey,ex.name,dayLabel,ex):null;
+
+  let inner='';
+  if(isEditing){
+    inner=`
+      ${flag?progBanner(flag):''}
+      <div class="edit-form">
+        <div style="display:flex;gap:7px">
+          <div class="edit-field" style="max-width:65px">
+            <div class="edit-label">Sets</div>
+            <input class="edit-input" type="number" min="1" max="10" value="${S.editValues.sets}" oninput="updateEditSets(this.value)">
+          </div>
+        </div>
+        ${renderSetTable(ex,dayColor,true,bw)}
+        <div style="display:flex;gap:7px">
+          <button class="save-btn" style="background:${dayColor}" onclick="saveEdit('${key}')">SAVE</button>
+          <button class="cancel-btn" onclick="cancelEdit()">CANCEL</button>
+        </div>
+      </div>`;
+  } else {
+    inner=`
+      ${flag?progBanner(flag):''}
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap">
+        <div>
+          <span class="ex-name" style="color:${(isDone||isSkipped)?'#555':'#e8e8e8'}">${ex.name}</span>
+          ${tc?`<span class="tag-pill" style="background:${tc.bg};color:${tc.color}">${tag}</span>`:''}
+          ${isSkipped?'<span style="font-size:9px;color:#ff6b6b88;margin-left:6px">SKIPPED</span>':''}
+        </div>
+        <div style="display:flex;gap:5px;align-items:center">
+          <button class="skip-btn${isSkipped?' active':''}" onclick="toggleSkip('${key}')">${isSkipped?'UNDO':'SKIP'}</button>
+          <button class="edit-btn" onclick="startEdit(event,'${key}')">EDIT</button>
+        </div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill-accent" style="color:${dayColor};background:${dayColor}18">${ex.sets}×${ex.reps}</span>
+        ${!bw?`<span class="pill-dark">${ex.load}</span>`:''}
+      </div>
+      ${renderSetTable(ex,dayColor,false,bw)}
+      <div class="ex-note" style="color:${(isDone||isSkipped)?'#333':'#666'}">${ex.note||''}</div>`;
+  }
+
+  const drgAttr=!isFinisher?`draggable="true" ondragstart="dragStart(event,${dragIdx})" ondragover="dragOver(event,${dragIdx})" ondrop="dragDrop(event,${dragIdx})" ondragend="dragEnd()"`:'' ;
+  return `<div class="ex-card ${rowCls}${isDone?' done':''}${isSkipped?' skipped':''}${isEditing?' editing':''}" style="--dc:${dayColor}" ${drgAttr} id="excard-${key}">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${tag==='PLYO'?'#ff6b6b':tag==='ABS'?'#47ff99':dayColor};opacity:${tag?0.6:0.4}"></div>
+    <div class="ex-row-inner">
+      ${!isFinisher?`<div class="drag-handle" title="Drag to reorder">⠿</div>`:''}
+      <div class="check-circle" style="${checkStyle}" onclick="${checkFn}">${isDone?'✓':''}</div>
+      <div style="flex:1;min-width:0">${inner}</div>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// WORKOUT PAGE
+// ─────────────────────────────────────────────
+function renderWorkout(){
+  const sk=curSK(), wd=getWD(sk), di=S.activeDay, day=wd.days[di];
+  const logged=wd.logged||{}, skipped=wd.skipped||{};
+  const order=wd.order?wd.order[di]:day.exercises.map((_,i)=>i);
+
+  function isLogged(k){return !!logged[k];}
+  function isSkip(k){return !!skipped[k];}
+  // completion: only non-skipped exercises count
+  const activeKeys=order.map(ei=>`${di}-${ei}`).filter(k=>!isSkip(k));
+  const doneCount=activeKeys.filter(k=>isLogged(k)).length;
+  const totalCount=activeKeys.length;
+  const weekDone=wd.days.filter((d,dIdx)=>{
+    const ord=wd.order?wd.order[dIdx]:d.exercises.map((_,i)=>i);
+    const active=ord.map(ei=>`${dIdx}-${ei}`).filter(k=>!(wd.skipped||{})[k]);
+    return active.length>0&&active.every(k=>(wd.logged||{})[k]);
+  }).length;
+  const isCurWk=S.weekOffset===0;
+
+  let html=`<div class="week-nav">
+    <button class="week-btn" onclick="changeWeek(-1)">← prev</button>
+    <div style="text-align:center">
+      <div class="bebas" style="font-size:14px;color:${isCurWk?'#E8FF47':'#ccc'}">${isCurWk?'THIS WEEK':''}</div>
+      <div style="font-size:11px;color:#888">${weekLabel(sk)}</div>
+    </div>
+    <button class="week-btn" onclick="changeWeek(1)" style="opacity:${S.weekOffset===0?0.2:1}">next →</button>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:9px;color:#3a3a3a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.1em">
+    <span>week progress</span><span>${weekDone}/5 sessions</span>
+  </div>
+  <div class="pb-track"><div class="pb-fill" style="width:${(weekDone/5)*100}%;background:#E8FF47"></div></div>`;
+
+  // Day tabs
+  html+=`<div class="day-tabs">`;
+  wd.days.forEach((d,i)=>{
+    const ord=wd.order?wd.order[i]:d.exercises.map((_,idx)=>idx);
+    const act=ord.map(ei=>`${i}-${ei}`).filter(k=>!(wd.skipped||{})[k]);
+    const done=act.length>0&&act.every(k=>(wd.logged||{})[k]);
+    const isAct=i===S.activeDay;
+    html+=`<div class="day-tab" style="border-bottom-color:${isAct?d.color:'transparent'};color:${isAct?d.color:'#555'}" onclick="setDay(${i})">
+      <div class="dt-label">${d.label}</div>
+      <div class="dt-type" style="background:${isAct?d.color:'transparent'};color:${isAct?d.textColor:'#555'}">${d.type}</div>
+      <div class="dt-date">${fmt(getDayDate(sk,d.label))}</div>
+      ${done?`<div class="dt-dot" style="background:${d.color}"></div>`:''}
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // Day header
+  html+=`<div style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;flex-wrap:wrap">
+      <div class="bebas" style="font-size:22px;color:${day.color}">${day.focus}</div>
+      <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${day.color}22;color:${day.color};border:1px solid ${day.color}44">${day.type}</span>
+      <span style="font-size:11px;color:#444;margin-left:auto">${doneCount}/${totalCount}</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:#1e1e1e;border:1px solid #2a2a2a;font-size:11px;color:#888">
+      <div style="width:6px;height:6px;border-radius:50%;background:${day.color}"></div>${day.tag}
+    </div>
+  </div>
+  <div style="font-size:10px;color:#2a2a2a;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px">Tap ✓ to log · EDIT to adjust · SKIP to exclude · drag ⠿ to reorder</div>`;
+
+  // Sections in order
+  const sections=[
+    {label:'Power',  filter:ex=>ex.exTag==='PLYO'},
+    {label:'Strength',filter:ex=>!ex.exTag||ex.exTag==='GRIP'},
+    {label:'Core',   filter:ex=>ex.exTag==='ABS'},
+  ];
+  sections.forEach(sec=>{
+    const items=order.map(ei=>({ex:day.exercises[ei],ei})).filter(({ex})=>sec.filter(ex));
+    if(!items.length) return;
+    html+=`<div class="sec-div">${sec.label}</div>`;
+    items.forEach(({ex,ei},posInSection)=>{
+      const key=`${di}-${ei}`;
+      html+=renderExCard(ex,key,day.color,isLogged(key),isSkip(key),sk,day.label,false,ei);
+    });
+  });
+
+  // Banners
+  if(doneCount===totalCount&&totalCount>0){
+    html+=`<div class="complete-banner" style="background:${day.color}12;border:1px solid ${day.color}33">
+      <div class="bebas" style="font-size:20px;color:${day.color}">SESSION COMPLETE</div>
+      <div style="font-size:11px;color:#555;margin-top:3px">REST · RECOVER · COME BACK STRONGER</div>
+    </div>`;
+  }
+  if(weekDone===5){
+    html+=`<div class="complete-banner" style="background:#1a1a0a;border:1px solid #E8FF4733;margin-top:10px">
+      <div class="bebas" style="font-size:18px;color:#E8FF47">🏆 FULL WEEK COMPLETE</div>
+    </div>`;
+  }
+
+  // Finishers
+  const finIdx=FINISHER_IDX[day.label];
+  const finData=(wd.finishers||FINISHERS.map(f=>({exercises:f.exercises.map(e=>({...e}))})))[finIdx];
+  if(finData){
+    html+=`<div class="finisher-section">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+        <div class="bebas" style="font-size:17px;color:${day.color}">IF YOU HAVE TIME</div>
+        <span style="font-size:9px;color:#555;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:4px;padding:2px 8px">+5–8 MIN</span>
+      </div>
+      <div style="font-size:10px;color:#3a3a3a;margin-bottom:10px">OPTIONAL FINISHERS — tap ✓ to log · EDIT to adjust</div>`;
+    finData.exercises.forEach((ex,fi)=>{
+      const key=`f-${finIdx}-${fi}`;
+      const done=!!(wd.finisherLogged||{})[key];
+      html+=`<div class="fin-card" style="background:${done?'#111':'#131313'};border:1px solid ${S.editingKey===key?day.color:done?day.color+'44':day.color+'22'};opacity:${done?0.55:1}">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${day.color};opacity:${done?1:0.5}"></div>
+        ${renderExCard(ex,key,day.color,done,false,sk,day.label,true,-1)}
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Cable-free
+  const cf=CABLE_FREE[day.label]||[];
+  if(cf.length){
+    html+=`<div class="cable-section">
+      <div class="bebas" style="font-size:16px;color:#888;margin-bottom:5px">NO CABLE? USE THESE</div>
+      <div style="font-size:10px;color:#3a3a3a;margin-bottom:10px">DB alternatives for cable exercises today</div>`;
+    cf.forEach(c=>{
+      html+=`<div class="cable-card">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#444"></div>
+        <div style="font-size:9px;color:#3a3a3a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">REPLACES: ${c.original}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:500;color:#bbb">${c.alt}</div>
+          <div style="display:flex;gap:5px"><span class="pill-dark">${c.sets}×${c.reps}</span><span class="pill-dark">${c.load}</span></div>
+        </div>
+        <div style="font-size:11px;color:#444;line-height:1.5">${c.note}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  document.getElementById('page-workout').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────
+// MOBILITY
+// ─────────────────────────────────────────────
+function renderMobility(){
+  let html=`<div class="bebas" style="font-size:26px;color:#fff;margin-bottom:3px">MOBILITY WORK</div>
+  <div style="font-size:11px;color:#555;margin-bottom:5px">15–20 min · Before sessions or on rest days</div>
+  <div style="font-size:11px;color:#3a3a3a;margin-bottom:20px;line-height:1.6">Pick 2–3 blocks per session, or all 5 for a full mobility day.</div>`;
+  MOBILITY.forEach(block=>{
+    const open=!!S.mobOpen[block.id];
+    const done=block.exercises.filter((_,i)=>S.mobChecked[`${block.id}-${i}`]).length;
+    html+=`<div class="mob-block">
+      <div class="mob-header${open?' open':''}" style="border:1px solid ${open?block.color+'55':'#222'}" onclick="toggleMob('${block.id}')">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${block.color};opacity:${open?1:0.3}"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap">
+              <div class="bebas" style="font-size:16px;color:${open?block.color:'#ccc'}">${block.label}</div>
+              <span style="font-size:9px;color:${block.color};background:${block.color}18;border:1px solid ${block.color}33;padding:1px 7px;border-radius:3px;font-weight:600">${block.duration}</span>
+              ${done===block.exercises.length?`<span style="font-size:9px;color:#47ff99">✓ DONE</span>`:''}
+            </div>
+            <div style="font-size:10px;color:#555">🎯 ${block.why}</div>
+            <div style="font-size:10px;color:#3a3a3a;margin-top:2px">Equipment: ${block.equipment}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;color:${open?block.color:'#444'}">${open?'▲':'▼'}</div>
+            <div style="font-size:10px;color:#3a3a3a">${done}/${block.exercises.length}</div>
+          </div>
+        </div>
+      </div>
+      <div class="mob-body${open?' open':''}" style="border:1px solid ${block.color}33">`;
+    block.exercises.forEach((ex,ei)=>{
+      const isDone=!!S.mobChecked[`${block.id}-${ei}`];
+      html+=`<div class="mob-ex" style="border-bottom:${ei<block.exercises.length-1?'1px solid #1a1a1a':'none'};opacity:${isDone?0.4:1}" onclick="toggleMobEx('${block.id}',${ei})">
+        <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${isDone?block.color:'#333'};background:${isDone?block.color:'transparent'};display:flex;align-items:center;justify-content:center;font-size:11px;color:#000;flex-shrink:0;margin-top:2px">${isDone?'✓':''}</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:3px;flex-wrap:wrap">
+            <div style="font-size:13px;font-weight:500;color:${isDone?'#444':'#ddd'}">${ex.name}</div>
+            <span style="font-size:10px;color:${block.color};background:${block.color}15;padding:2px 8px;border-radius:4px;font-weight:500;flex-shrink:0">${ex.duration}</span>
+          </div>
+          <div style="font-size:11px;color:${isDone?'#2e2e2e':'#666'};line-height:1.6">${ex.note}</div>
+        </div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  html+=`<div style="margin-top:14px;padding:13px 14px;border-radius:10px;background:#141414;border:1px solid #1e1e1e;font-size:11px;color:#555;line-height:1.8">
+    <span style="color:#888;font-weight:500">Before upper sessions:</span> Thoracic + Shoulder Rotation<br>
+    <span style="color:#888;font-weight:500">Before lower sessions:</span> Hip Flexors + Ankle + Posterior Chain<br>
+    <span style="color:#888;font-weight:500">Rest day:</span> All 5 blocks · ~18–20 min
+  </div>`;
+  document.getElementById('page-mobility').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────
+// HISTORY
+// ─────────────────────────────────────────────
+function renderHistory(){
+  let html=`<div class="bebas" style="font-size:26px;color:#fff;margin-bottom:3px">SESSION HISTORY</div>
+  <div style="font-size:11px;color:#444;margin-bottom:18px">Tap a day tile to see logged detail and timestamps</div>`;
+  const weeks=Object.keys(S.allWeeks).sort().reverse();
+  if(!weeks.length) html+=`<div style="color:#333;font-size:12px;text-align:center;margin-top:60px">No sessions logged yet.</div>`;
+  weeks.forEach(sk=>{
+    const wd=S.allWeeks[sk];
+    const logged=wd.logged||{}, skipped=wd.skipped||{};
+    const sessComplete=wd.days.filter((d,di)=>{
+      const ord=wd.order?wd.order[di]:d.exercises.map((_,i)=>i);
+      const act=ord.map(ei=>`${di}-${ei}`).filter(k=>!skipped[k]);
+      return act.length>0&&act.every(k=>logged[k]);
+    }).length;
+    const totalDone=Object.keys(logged).filter(k=>!k.startsWith('f-')).length;
+    const totalEx=wd.days.reduce((s,d)=>s+d.exercises.length,0);
+    const activeDates=[...new Set(Object.entries(logged).filter(([k])=>!k.startsWith('f-')).map(([,iso])=>new Date(iso).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})))];
+
+    html+=`<div class="hist-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div class="bebas" style="font-size:17px;color:#fff">${weekLabel(sk)}</div>
+          <div style="font-size:9px;color:#3a3a3a;margin-top:2px">${activeDates.slice(0,4).join(' · ')}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:${sessComplete===5?'#E8FF47':'#888'};font-weight:500">${sessComplete}/5 sessions</div>
+          <div style="font-size:10px;color:#3a3a3a">${totalDone}/${totalEx} exercises</div>
+        </div>
+      </div>
+      <div class="hist-day-grid">`;
+
+    wd.days.forEach((d,di)=>{
+      const ord=wd.order?wd.order[di]:d.exercises.map((_,i)=>i);
+      const act=ord.map(ei=>`${di}-${ei}`).filter(k=>!skipped[k]);
+      const done=act.length>0&&act.every(k=>logged[k]);
+      const partial=!done&&act.some(k=>logged[k]);
+      const dayDate=getDayDate(sk,d.label);
+      const hk=`h-${sk}-${di}`;
+      html+=`<div class="hist-day-tile" style="background:${done?d.color+'33':partial?'#1e1e14':'#1a1a1a'};border-color:${done?d.color+'55':partial?'#3a3a22':'#222'}" onclick="toggleHist('${hk}')">
+        <div style="font-size:9px;font-family:'Bebas Neue',sans-serif;color:${done?d.color:partial?'#888':'#333'};letter-spacing:.08em">${d.label}</div>
+        <div style="font-size:8px;color:${done?d.color:partial?'#666':'#333'};margin-top:1px">${done?'✓':partial?'~':'–'}</div>
+        <div style="font-size:7px;color:#444;margin-top:2px">${fmt(dayDate)}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+
+    wd.days.forEach((d,di)=>{
+      const hk=`h-${sk}-${di}`;
+      if(!S.histOpen[hk]){html+=`<div class="hist-drill" id="${hk}"></div>`;return;}
+      html+=`<div class="hist-drill open" id="${hk}" style="border:1px solid ${d.color}33">
+        <div style="display:flex;justify-content:space-between;margin-bottom:7px">
+          <div class="bebas" style="font-size:13px;color:${d.color}">${d.label} — ${d.focus}</div>
+        </div>`;
+      d.exercises.forEach((ex,ei)=>{
+        const key=`${di}-${ei}`;
+        const ts=logged[key], skip=skipped[key];
+        const bw=isBW(ex.load);
+        html+=`<div class="hist-ex-row" style="opacity:${ts?1:skip?0.2:0.35}">
+          <div style="font-size:11px;color:${ts?'#ccc':skip?'#444':'#444'};flex:1;min-width:0">
+            ${ex.name}${skip?` <span style="font-size:9px;color:#ff6b6b44">skipped</span>`:''}
+          </div>
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+            <span style="font-size:10px;color:${ts?d.color:'#333'};background:${ts?d.color+'18':'#1a1a1a'};padding:1px 6px;border-radius:3px">${ex.sets}×${ex.reps}</span>
+            ${!bw?`<span class="pill-dark" style="font-size:10px">${ex.load}</span>`:''}
+            ${ex.setWeights&&ex.setWeights.length>1?`<span style="font-size:9px;color:#3a3a3a">${ex.setWeights.map((w,i)=>`S${i+1}:${(ex.setReps||[])[i]||ex.reps}r${!bw?' '+w:''}`).join(' ')}</span>`:''}
+          </div>
+          ${ts?`<div style="font-size:9px;color:#555;width:100%;text-align:right;margin-top:2px">${fmtDT(ts)}</div>`:''}
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('page-history').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────
+// PROGRESS
+// ─────────────────────────────────────────────
+function renderProgress(){
+  const names=[...new Set(PROGRAM_DAYS.flatMap(d=>d.exercises.map(e=>e.name)))];
+  const sel=S.selectedEx||names[0];
+  const opts=names.map(n=>`<option value="${n}"${n===sel?'selected':''}>${n}</option>`).join('');
+  let html=`<div class="bebas" style="font-size:26px;color:#fff;margin-bottom:3px">EXERCISE PROGRESS</div>
+  <div style="font-size:11px;color:#444;margin-bottom:14px">Load tracking + progression recommendations</div>
+  <select class="sel-input" onchange="S.selectedEx=this.value;renderProgress()">${opts}</select>`;
+
+  const data=[];
+  Object.keys(S.allWeeks).sort().forEach(sk=>{
+    const wd=S.allWeeks[sk];
+    wd.days.forEach((d,di)=>{
+      const ex=d.exercises.find(e=>e.name===sel);
+      if(!ex) return;
+      const anyDone=d.exercises.some((_,ei)=>(wd.logged||{})[`${di}-${ei}`]);
+      if(anyDone) data.push({sk,ex,label:d.label});
+    });
+  });
+
+  if(data.length>=2){
+    const last=data[data.length-1], prev=data[data.length-2];
+    if(!isBW(last.ex.load)&&parseInt(last.ex.reps)>=parseInt(last.ex.reps)&&parseInt(prev.ex.reps)>=parseInt(prev.ex.reps)){
+      const inc=suggestInc(sel);
+      html+=`<div style="padding:11px 14px;border-radius:9px;margin-bottom:14px;background:#E8FF4710;border:1px solid #E8FF4733">
+        <div style="font-size:9px;color:#E8FF47;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">📈 TRAINER RECOMMENDATION</div>
+        <div style="font-size:11px;color:#E8FF47">Rep target hit — consider increasing weight by ${inc}</div>
+        <div style="font-size:10px;color:#888;margin-top:3px">${prev.ex.sets}×${prev.ex.reps} @ ${prev.ex.load} → ${last.ex.sets}×${last.ex.reps} @ ${last.ex.load}</div>
+      </div>`;
+    }
+  }
+
+  if(!data.length){
+    html+=`<div style="color:#333;font-size:12px;text-align:center;margin-top:40px">No data yet.<br>Log a session to start tracking.</div>`;
+  } else {
+    data.forEach((entry,i)=>{
+      const isLatest=i===data.length-1, bw=isBW(entry.ex.load);
+      html+=`<div class="prog-entry">
+        <div style="width:74px;font-size:10px;color:#555;flex-shrink:0">${fmt(getDayDate(entry.sk,entry.label))}</div>
+        <div class="prog-bar-wrap" style="border-color:${isLatest?'#E8FF4755':'#1e1e1e'}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:${isLatest?'#E8FF47':'#ccc'};font-weight:500">${bw?'Bodyweight':entry.ex.load}</span>
+            <span style="font-size:10px;color:#555">${entry.ex.sets}×${entry.ex.reps}</span>
+          </div>
+          ${entry.ex.setWeights&&entry.ex.setWeights.length>1?`<div style="font-size:9px;color:#3a3a3a;margin-top:2px">${entry.ex.setWeights.map((w,i)=>`S${i+1}:${(entry.ex.setReps||[])[i]||entry.ex.reps}r${!bw?' '+w:''}`).join(' ')}</div>`:''}
+        </div>
+        ${isLatest?`<div style="font-size:10px;color:#E8FF47;flex-shrink:0">← now</div>`:''}
+      </div>`;
+    });
+  }
+
+  const wks=Object.keys(S.allWeeks);
+  if(wks.length){
+    const totalSess=Object.values(S.allWeeks).reduce((s,wd)=>s+wd.days.filter((d,di)=>{const ord=wd.order?wd.order[di]:d.exercises.map((_,i)=>i);const act=ord.map(ei=>`${di}-${ei}`).filter(k=>!(wd.skipped||{})[k]);return act.length>0&&act.every(k=>(wd.logged||{})[k]);}).length,0);
+    const totalEx=Object.values(S.allWeeks).reduce((s,wd)=>s+Object.keys(wd.logged||{}).filter(k=>!k.startsWith('f-')).length,0);
+    const fullWks=Object.values(S.allWeeks).filter(wd=>wd.days.every((d,di)=>{const ord=wd.order?wd.order[di]:d.exercises.map((_,i)=>i);const act=ord.map(ei=>`${di}-${ei}`).filter(k=>!(wd.skipped||{})[k]);return act.length>0&&act.every(k=>(wd.logged||{})[k]);})).length;
+    html+=`<div class="bebas" style="font-size:17px;color:#fff;margin:26px 0 10px">OVERALL STATS</div>
+    <div class="stat-grid">
+      ${[['Weeks Logged',wks.length],['Full Weeks',fullWks],['Total Sessions',totalSess],['Exercises Logged',totalEx]].map(([l,v])=>`
+      <div class="stat-card"><div class="bebas" style="font-size:26px;color:#E8FF47">${v}</div><div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.08em">${l}</div></div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('page-progress').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────
+// ACTIONS
+// ─────────────────────────────────────────────
+function showPage(v){
+  S.view=v;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+v).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{if(b.textContent.includes(v))b.classList.add('active');});
+  renderPage();
+}
+function renderPage(){
+  if(S.view==='workout') renderWorkout();
+  else if(S.view==='mobility') renderMobility();
+  else if(S.view==='history') renderHistory();
+  else if(S.view==='progress') renderProgress();
+}
+function changeWeek(dir){
+  if(dir===1&&S.weekOffset===0) return;
+  S.weekOffset+=dir; S.editingKey=null; renderWorkout();
+}
+function setDay(i){S.activeDay=i;S.editingKey=null;renderWorkout();}
+
+function toggleCheck(key){
+  if(S.editingKey) return;
+  const sk=curSK(); ensureWeek(sk);
+  const wd=S.allWeeks[sk];
+  if(!wd.logged) wd.logged={};
+  if(wd.logged[key]) delete wd.logged[key];
+  else wd.logged[key]=new Date().toISOString();
+  saveStorage(); renderWorkout();
+}
+function toggleFinisher(key){
+  if(S.editingKey) return;
+  const sk=curSK(); ensureWeek(sk);
+  const wd=S.allWeeks[sk];
+  if(!wd.finisherLogged) wd.finisherLogged={};
+  if(wd.finisherLogged[key]) delete wd.finisherLogged[key];
+  else wd.finisherLogged[key]=new Date().toISOString();
+  saveStorage(); renderWorkout();
+}
+function toggleSkip(key){
+  if(S.editingKey) return;
+  const sk=curSK(); ensureWeek(sk);
+  const wd=S.allWeeks[sk];
+  if(!wd.skipped) wd.skipped={};
+  if(wd.skipped[key]) delete wd.skipped[key];
+  else wd.skipped[key]=true;
+  // If skipping, also remove any log for it
+  if(wd.skipped[key]&&wd.logged&&wd.logged[key]) delete wd.logged[key];
+  saveStorage(); renderWorkout();
+}
+
+function startEdit(e,key){
+  e.stopPropagation();
+  const sk=curSK(), wd=getWD(sk);
+  let ex;
+  if(key.startsWith('f-')){
+    const[,fi,ei]=key.split('-').map(Number);
+    const fins=wd.finishers||FINISHERS.map(f=>({exercises:f.exercises.map(ex=>({...ex}))}));
+    ex=fins[fi].exercises[ei];
+  } else {
+    const[di,ei]=key.split('-').map(Number);
+    ex=wd.days[di].exercises[ei];
+  }
+  const n=parseInt(ex.sets)||3;
+  const sw=ex.setWeights&&ex.setWeights.length===n?[...ex.setWeights]:Array(n).fill(ex.load||'');
+  const sr=ex.setReps&&ex.setReps.length===n?[...ex.setReps]:Array(n).fill(ex.reps||'');
+  S.editingKey=key;
+  S.editValues={sets:ex.sets,reps:ex.reps,load:ex.load||'',setWeights:sw,setReps:sr};
+  renderWorkout();
+}
+function updateEditSets(val){
+  const n=Math.max(1,Math.min(10,parseInt(val)||1));
+  const cw=S.editValues.setWeights||[], cr=S.editValues.setReps||[];
+  S.editValues.sets=String(n);
+  S.editValues.setWeights=Array(n).fill(null).map((_,i)=>cw[i]!==undefined?cw[i]:(cw[cw.length-1]||S.editValues.load||''));
+  S.editValues.setReps=Array(n).fill(null).map((_,i)=>cr[i]!==undefined?cr[i]:(cr[cr.length-1]||S.editValues.reps||''));
+  renderWorkout();
+}
+function saveEdit(key){
+  const sk=curSK(); ensureWeek(sk);
+  const wd=S.allWeeks[sk];
+  const sw=S.editValues.setWeights||[], sr=S.editValues.setReps||[];
+  const uw=[...new Set(sw.filter(Boolean))], ur=[...new Set(sr.filter(Boolean))];
+  const displayLoad=uw.length===1?uw[0]:uw.length>1?uw.join(' / '):S.editValues.load;
+  const displayReps=ur.length===1?ur[0]:ur.length>1?ur.join(' / '):S.editValues.reps;
+  const updated={reps:displayReps,sets:S.editValues.sets,load:displayLoad,
+    setWeights:sw.length>1?sw:undefined, setReps:sr.length>1?sr:undefined};
+  if(key.startsWith('f-')){
+    const[,fi,ei]=key.split('-').map(Number);
+    if(!wd.finishers) wd.finishers=FINISHERS.map(f=>({exercises:f.exercises.map(ex=>({...ex}))}));
+    Object.assign(wd.finishers[fi].exercises[ei],updated);
+  } else {
+    const[di,ei]=key.split('-').map(Number);
+    Object.assign(wd.days[di].exercises[ei],updated);
+  }
+  S.editingKey=null; saveStorage(); renderWorkout();
+}
+function cancelEdit(){S.editingKey=null;renderWorkout();}
+
+// ─────────────────────────────────────────────
+// DRAG TO REORDER
+// ─────────────────────────────────────────────
+function dragStart(e,ei){
+  S.dragSrc=ei;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(ei));
+  setTimeout(()=>{
+    const el=document.getElementById(`excard-${S.activeDay}-${ei}`);
+    if(el) el.classList.add('dragging');
+  },0);
+}
+function dragOver(e,ei){
+  e.preventDefault(); e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.ex-card').forEach(c=>c.classList.remove('drag-over'));
+  const el=document.getElementById(`excard-${S.activeDay}-${ei}`);
+  if(el&&S.dragSrc!==ei) el.classList.add('drag-over');
+}
+function dragDrop(e,targetEi){
+  e.preventDefault();
+  if(S.dragSrc===null||S.dragSrc===targetEi) return;
+  const sk=curSK(); ensureWeek(sk);
+  const wd=S.allWeeks[sk], di=S.activeDay;
+  if(!wd.order) wd.order=PROGRAM_DAYS.map(pd=>pd.exercises.map((_,i)=>i));
+  const ord=[...wd.order[di]];
+  const srcIdx=ord.indexOf(S.dragSrc), tgtIdx=ord.indexOf(targetEi);
+  if(srcIdx===-1||tgtIdx===-1) return;
+  ord.splice(srcIdx,1); ord.splice(tgtIdx,0,S.dragSrc);
+  wd.order[di]=ord;
+  saveStorage(); S.dragSrc=null; renderWorkout();
+}
+function dragEnd(){
+  S.dragSrc=null;
+  document.querySelectorAll('.ex-card').forEach(c=>{c.classList.remove('dragging');c.classList.remove('drag-over');});
+}
+
+// ─────────────────────────────────────────────
+// MOBILITY / HISTORY TOGGLES
+// ─────────────────────────────────────────────
+function toggleMob(id){S.mobOpen[id]=!S.mobOpen[id];renderMobility();}
+function toggleMobEx(blockId,ei){const k=`${blockId}-${ei}`;S.mobChecked[k]=!S.mobChecked[k];renderMobility();}
+function toggleHist(key){S.histOpen[key]=!S.histOpen[key];renderHistory();}
+
+// ─────────────────────────────────────────────
+// AUTO-GENERATE UPCOMING WEEKS
+// ─────────────────────────────────────────────
+function autoGenWeeks(){for(let i=0;i<=4;i++) ensureWeek(getSundayKey(i));}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+loadStorage();
+autoGenWeeks();
+renderPage();
+</script>
+</body>
+</html>
